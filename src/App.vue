@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import TodoComponent from './components/TodoComponent.vue';
-const monTableau = ref([{ todo: 'apprendre Vue Js', done: false },
-{ todo: 'apprendre à faire des boucles', done: false },
-{ todo: 'apprendre à griller des saucisses', done: true }]);
+const monTableau = ref([]);
+
+onMounted(async () => {
+  const todosRequest = await fetch('http://localhost:3000/todos');
+  const todos = await todosRequest.json();
+  monTableau.value = [...todos];
+});
 
 // const monTableau = [1, 2, 3];
 
