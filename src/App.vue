@@ -43,13 +43,10 @@ const deleteTodo = async (id: number, index: number) => {
   pair</span>
   <span v-else>Mon tableau est impair</span>
   <br />
-  <TodoComponent
-  v-for="(element, index) in monTableau"
-  :todo="element"
-  v-bind:key="element.id"
-  @onInput="onTodoInput($event, index)"
-  />
-  <button @click="deleteTodo(element.id, index)">Supprimer</button>
+  <div v-for="(element, index) in monTableau" :key="element.id">
+    <TodoComponent :todo="element" @onInput="onTodoInput($event, index)" />
+    <button @click="deleteTodo(element.id, index)">Supprimer</button>
+  </div>
   </template>
   
 
