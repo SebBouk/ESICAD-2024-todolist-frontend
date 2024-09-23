@@ -33,6 +33,25 @@ const deleteTodo = async (id: number, index: number) => {
   console.log('Todo supprimé');
 };
 
+const ajouterElement = async () => {
+  const nouvelleTache = { label: 'Nouvelle tâche', done: false };
+
+  const response = await fetch('http://localhost:3000/todos', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(nouvelleTache)
+  });
+
+  if (response.ok) {
+    const nouvelleTacheAjoutee = await response.json();
+
+    monTableau.value.push(nouvelleTacheAjoutee);
+  } else {
+    console.error("Erreur lors de l'ajout de la tâche");
+  }
+};
 
 
 </script>
@@ -47,6 +66,7 @@ const deleteTodo = async (id: number, index: number) => {
     <TodoComponent :todo="element" @onInput="onTodoInput($event, index)" />
     <button @click="deleteTodo(element.id, index)">Supprimer</button>
   </div>
+  <button @click="ajouterElement">Ajouter une tâche</button>
   </template>
   
 
