@@ -7,7 +7,7 @@ const monTableau = ref<Todo[]>([]);
 
 onMounted(async () => {
   const todosRequest = await fetch('http://localhost:3000/todos');
-  const todos:Todo[] = await todosRequest.json();
+  const todos: Todo[] = await todosRequest.json();
   monTableau.value = [...todos];
 });
 
@@ -18,16 +18,16 @@ const onTodoInput = async (newTodoValue: Todo, index: number) => {
   await fetch(`http://localhost:3000/todos/${newTodoValue.id}`, {
     method: 'PUT',
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     },
-    body: JSON.stringify(newTodoValue),
+    body: JSON.stringify(newTodoValue)
   });
   console.log('monTableau est mis à jour et la modification est envoyée au serveur');
 };
 
 const deleteTodo = async (id: number, index: number) => {
   await fetch(`http://localhost:3000/todos/${id}`, {
-    method: 'DELETE',
+    method: 'DELETE'
   });
   monTableau.value.splice(index, 1);
   console.log('Todo supprimé');
@@ -52,22 +52,41 @@ const ajouterElement = async () => {
     console.error("Erreur lors de l'ajout de la tâche");
   }
 };
-
-
 </script>
 
 <template>
-  <p>Hello World !</p>
-  <span v-if="monTableau.length % 2 === 0">Mon tableau est
-  pair</span>
+  <p>Hello World ! It's my Todolist !!!</p>
+  <span v-if="monTableau.length % 2 === 0">Mon tableau est pair</span>
   <span v-else>Mon tableau est impair</span>
+  <br />
   <br />
   <div v-for="(element, index) in monTableau" :key="element.id">
     <TodoComponent :todo="element" @onInput="onTodoInput($event, index)" />
-    <button @click="deleteTodo(element.id, index)">Supprimer</button>
+    <button class="suppr" @click="deleteTodo(element.id, index)">Supprimer</button>
   </div>
+  <br />
   <button @click="ajouterElement">Ajouter une tâche</button>
-  </template>
-  
+</template>
 
-<style scoped></style>
+<style scoped>
+.suppr{
+  display: inline-block;
+  background-color: #d62d2d;
+  border-radius: 10px;
+  border: 4px double #cccccc;
+  color: #eeeeee;
+  text-align: center;
+  font-size: 18px;
+  padding:10px;
+  width: 150px;
+  -webkit-transition: all 0.5s;
+  -moz-transition: all 0.5s;
+  -o-transition: all 0.5s;
+  transition: all 0.5s;
+  cursor: pointer;
+  margin: 5px;
+}
+
+</style>
+
+
