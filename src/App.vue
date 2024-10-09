@@ -68,6 +68,7 @@ const ajouterElement = async () => {
     <nav>
       <router-link to="/">Accueil</router-link>
       <router-link to="/about">À propos</router-link>
+      <router-link to="/login">Connexion</router-link>
     </nav>
 
     <!-- Afficher le contenu du composant en fonction de la route -->
