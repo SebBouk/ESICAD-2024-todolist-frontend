@@ -4,4 +4,3 @@ export interface Todo {
     done: boolean;
     dueDate?: Date;
   }
-  

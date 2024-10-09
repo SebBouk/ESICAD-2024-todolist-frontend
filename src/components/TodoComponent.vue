@@ -2,11 +2,14 @@
 import { ref } from 'vue';
 import { Todo } from '../models/Todo';
 
-const props = defineProps<{ todo: Todo }>();
+
+const props = defineProps<{ todo: Todo}>();
+
 
 const editMode = ref(false);
 
 const newValue = ref(props.todo.label);
+
 
 const emit = defineEmits(['onInput']);
 const onInput = (value: boolean) => {
@@ -22,10 +25,11 @@ const onCancelText = () => {
   editMode.value = false;
   newValue.value = props.todo.label;
 };
+
 </script>
 
 <template>
-  <span v-if="!editMode">
+<span v-if="!editMode">
     <span class="color-box" :class="{ checked: props.todo.done }" @click="editMode = !editMode">
       {{ props.todo.label }}
     </span>
