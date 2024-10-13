@@ -10,7 +10,7 @@ const editMode = ref(false);
 </script>
 
 <template>
-    <span v-if="!editMode">
+  <span v-if="!editMode">
     <span>
       {{ props.users.nomUser }}
     </span>

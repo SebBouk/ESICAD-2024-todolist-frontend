@@ -3,6 +3,8 @@ import NotFoundView from '@/Views/NotFoundView.vue';
 import HomeView from '@/Views/HomeView.vue';
 import AboutView from '@/Views/AboutView.vue';
 import LoginView from '@/Views/LoginView.vue';
+import UsersComponent from '@/components/UsersComponent.vue';
+import TacheComponent from '@/components/TacheComponent.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,6 +28,16 @@ const router = createRouter({
       path:'/login',
       name: 'login',
       component: LoginView
+    },
+    {
+      path:'/users',
+      name:'users',
+      component: UsersComponent
+    },
+    {
+      path:'/tache',
+      name:'tache',
+      component: TacheComponent
     }
   ]
 });

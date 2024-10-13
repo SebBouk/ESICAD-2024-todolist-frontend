@@ -37,8 +37,6 @@
   </template>
   
   <script>
-import HomeView from './HomeView.vue';
-
   export default {
     name: 'LoginView',
     data() {
@@ -68,9 +66,10 @@ import HomeView from './HomeView.vue';
             const data = await response.json();
             console.log('Réponse du serveur :', data);
             alert('Connexion réussie !');
+            localStorage.setItem('token', data.token);
   
             // Redirection vers une autre page après une connexion réussie
-            this.$router.push('/');
+            this.$router.push('/tache');
           } else {
             // Si le serveur retourne une erreur (comme une authentification échouée)
             const errorData = await response.json();
