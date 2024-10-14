@@ -9,11 +9,11 @@ const monTableau = ref<Todo[]>([]);
 
 const mesUsers = ref<Users[]>([]);
 
-onMounted(async () => {
-  const todosRequest = await fetch('/api/todos');
-  const todos: Todo[] = await todosRequest.json();
-  monTableau.value = [...todos];
-});
+// onMounted(async () => {
+//   const todosRequest = await fetch('/api/todos');
+//   const todos: Todo[] = await todosRequest.json();
+//   monTableau.value = [...todos];
+// });
 
 onMounted(async () => {
   const UsersRequest = await fetch('/api/users');
@@ -85,11 +85,11 @@ const ajouterElement = async () => {
     <button class="suppr" @click="deleteTodo(element.idUser, index)">Supprimer</button>
   </div>
 
-  <div v-for="(element, index) in monTableau" :key="element.id">
+  <!-- <div v-for="(element, index) in monTableau" :key="element.id">
     <TodoComponent :todo="element" @onInput="onTodoInput($event, index)" />
     <button class="suppr" @click="deleteTodo(element.id, index)">Supprimer</button>
   </div>
-  <br />
+  <br /> -->
   <button @click="ajouterElement">Ajouter une tâche</button>
 </template>
 

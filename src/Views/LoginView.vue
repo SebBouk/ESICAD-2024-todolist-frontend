@@ -60,14 +60,16 @@
               password: this.password,
             }),
           });
+          const data = await response.json();
   
           if (response.ok) {
             // Si la connexion est réussie, on récupère les données de la réponse
-            const data = await response.json();
             console.log('Réponse du serveur :', data);
             alert('Connexion réussie !');
-            localStorage.setItem('token', data.token);
-  
+            localStorage.setItem('token', data.IdUser);
+            const token = localStorage.getItem('token');
+            console.log('Token récupéré :', token);
+
             // Redirection vers une autre page après une connexion réussie
             this.$router.push('/tache');
           } else {
