@@ -1,0 +1,30 @@
+<script setup lang="ts">
+import { Colis } from '../models/Colis';
+import ColisComponent from '@/components/ColisComponent.vue';
+import { onMounted, ref } from 'vue';
+import FooterComponent from '@/components/FooterComponent.vue';
+
+const mesColis = ref<Colis[]>([]);
+
+onMounted(async () => {
+  const colisRequest = await fetch('/api/admin/get-colis');
+  const colis = await colisRequest.json();
+  mesColis.value = [...colis];
+  console.log(mesColis.value);
+});
+</script>
+
+<template>
+  <table>
+    <tbody>
+      <tr>
+        <th>Numero de Colis</th>
+        <th>Adresse de livraison</th>
+        <th>Contact</th>
+        <th>Date de livraison prévu</th>
+      </tr>
+      <ColisComponent v-for="(element, index) in mesColis" :colis="element" v-bind:key="index" />
+    </tbody>
+  </table>
+  <FooterComponent />
+</template>
