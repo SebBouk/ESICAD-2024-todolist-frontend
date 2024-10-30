@@ -1,7 +1,7 @@
 export interface Livraison {
   IdLivraison: number;
   LivraisonEnCour : boolean;
-  LivraisonArrivé : boolean;
+  LivraisonArrive : boolean;
   SignatureClient : string;
   IdTournée: number;
   }

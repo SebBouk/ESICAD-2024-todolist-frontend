@@ -1,8 +1,8 @@
 export interface Employe {
-  IdEmployé: number;
-  NomEmployé : string;
-  RoleEmployé : boolean;
-  MailEmployé : string;
-  MdpEmployé : string;
+  IdEmploye: number;
+  NomEmploye : string;
+  RoleEmploye : boolean;
+  MailEmploye : string;
+  MdpEmploye : string;
   }
   

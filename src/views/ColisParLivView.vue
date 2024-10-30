@@ -4,12 +4,13 @@ import ColisComponent from '@/components/ColisComponent.vue';
 import { onMounted, ref } from 'vue';
 import FooterComponent from '@/components/FooterComponent.vue';
 import AdminView from './AdminView.vue';
-
-
+import { useRoute } from 'vue-router';
+const route = useRoute()
 const mesColis = ref<Colis[]>([]);
 
 onMounted(async () => {
-  const colisRequest = await fetch('/api/admin/get-colis');
+  const idLivraison = route.params.IdLivraison;
+  const colisRequest = await fetch(`/api/admin/get-colis/${idLivraison}`);
   const colis = await colisRequest.json();
   mesColis.value = [...colis];
   console.log(mesColis.value);

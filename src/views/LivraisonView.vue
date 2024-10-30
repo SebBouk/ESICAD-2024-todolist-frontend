@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { Livraison } from '../models/Livraison';
+
 import LivraisonComponent from '@/components/LivraisonComponent.vue';
 import { onMounted, ref } from 'vue';
 import FooterComponent from '@/components/FooterComponent.vue';
+import AdminView from './AdminView.vue';
+import { Livraison } from '@/models/Livraison';
 
 
 const mesLivraison = ref<Livraison[]>([]);
@@ -16,6 +18,7 @@ onMounted(async () => {
 </script>
 
 <template>
+  <AdminView/>
   <table>
     <tbody>
       <tr>

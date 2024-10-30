@@ -12,5 +12,7 @@ const props = defineProps<{
         <td> {{ props.colis.AdresseColis }}</td>
         <td>{{ props.colis.ContactColis }}</td>
         <td>{{ props.colis.DateLivColis }}</td>
+        <td>{{ props.colis.PoidColis }}</td>
+        <td>{{ props.colis.IdLivraison }}</td>
     </tr>
 </template>

@@ -1,8 +1,8 @@
 export interface Tournee {
-  IdTournée	: number;
-  DateTournée : Date;
-  TournéeEnCour : boolean;
-  TournéeTerminé : boolean;
-  IdEmployé: number;
+  IdTournee	: number;
+  DateTournee : Date;
+  TourneeEnCour : boolean;
+  TourneeTermine : boolean;
+  IdEmploye: number;
   }
   

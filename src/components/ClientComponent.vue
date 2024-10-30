@@ -10,7 +10,7 @@ const props = defineProps<{
     <tr>
         <td> {{ props.client.NomClient }}</td>
         <td> {{ props.client.AdresseFacture }}</td>
-        <td>{{ props.client.CoordonnéesClient }}</td>
+        <td>{{ props.client.CoordonneesClient }}</td>
         <td><button @click="$router.push('/commandes')">Commandes</button></td>
     </tr>
 </template>

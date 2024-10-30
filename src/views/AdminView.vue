@@ -3,11 +3,11 @@
 </script>
 <template>
   <nav>
-    <RouterLink to="/clients">Clients</RouterLink>
-    <RouterLink to="/colis">Colis</RouterLink>
-    <RouterLink to="/commandes">Commandes</RouterLink>
-    <RouterLink to="/livraison">Livraisons</RouterLink>
-    <RouterLink to="/Tournee">Tournées</RouterLink>
+    <RouterLink to="/clients" class="nav-link">Clients</RouterLink>
+    <RouterLink to="/colis" class="nav-link">Colis</RouterLink>
+    <RouterLink to="/commandes" class="nav-link">Commandes</RouterLink>
+    <RouterLink to="/livraison" class="nav-link">Livraisons</RouterLink>
+    <RouterLink to="/Tournee" class="nav-link">Tournées</RouterLink>
   </nav>
   <RouterView></RouterView>
 </template>

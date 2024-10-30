@@ -3,6 +3,7 @@ import { Client } from '../models/Client';
 import ClientComponent from '@/components/ClientComponent.vue';
 import FooterComponent from '@/components/FooterComponent.vue';
 import { onMounted, ref } from 'vue';
+import AdminView from './AdminView.vue';
 
 const mesClients = ref<Client[]>([]);
 
@@ -15,6 +16,7 @@ onMounted(async () => {
 </script>
 
 <template>
+  <AdminView/>
   <table>
     <tbody>
       <tr>

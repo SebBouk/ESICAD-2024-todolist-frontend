@@ -3,6 +3,7 @@ import CommandeComponent from '@/components/CommandeComponent.vue';
 import { onMounted, ref } from 'vue';
 import { CommandeAvecClient } from '@/models/CommandeAvecClient';
 import FooterComponent from '@/components/FooterComponent.vue';
+import AdminView from './AdminView.vue';
 
 const mesCommandes = ref<CommandeAvecClient[]>([]);
 
@@ -15,6 +16,7 @@ onMounted(async () => {
 </script>
 
 <template>
+  <AdminView/>
   <table>
     <tbody>
       <tr>
