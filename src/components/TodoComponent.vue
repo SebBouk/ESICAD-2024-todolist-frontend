@@ -24,6 +24,9 @@ const onConfirmText = () => {
   editMode.value = false;
   emit('onInput', { ...props.todo, label: newValue.value });
 };
+  editMode.value = false;
+  emit('onInput', { ...props.todo, label: newValue.value });
+};
 const onCancelText = () => {
   editMode.value = false;
   newValue.value = props.todo.label;
