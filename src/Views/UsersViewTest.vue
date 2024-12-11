@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import DynamicTable from '../components/DynamiqueTable.vue';
+import DynamicForm from '../components/DynamicForm.vue';
+import DynamicTable from '../components/DynamicTable.vue';
 import { Users } from '@/models/Users';
 
 interface Column {
@@ -42,28 +43,13 @@ const fetchUsers = async () => {
   }
 };
 
-const prepareData = (rows: any[]) => {
-  return rows.map((row) => {
-    const convertedRow = { ...row };
-    columns.value.forEach((col) => {
-      if (col.isBoolean) {
-        convertedRow[col.key] = row[col.key] ? 1 : 0; // Convert `true/false` to `1/0`
-        console.log(`Colonne ${col.key}:`, row[col.key], '=>', convertedRow[col.key]);
-      }
-    });
-    return convertedRow;
-  });
-};
-
 const saveData = async () => {
   if (!tableRef.value) {
     console.error('Référence au tableau introuvable !');
     return;
   }
 
-  console.log('Rows avant préparation:', tableRef.value.rows);
-  
-  const updatedRows = prepareData(tableRef.value.rows || []);
+  const updatedRows = tableRef.value.getExposedRows();
   console.log('Rows après préparation:', updatedRows);
   loading.value = true;
   errorMessage.value = null;
@@ -91,24 +77,19 @@ const saveData = async () => {
   } finally {
     loading.value = false;
   }
+  console.log('Contenu du tableRef:', tableRef.value);
+  console.log('Méthodes disponibles:', Object.keys(tableRef.value || {}));
 };
 
-const newUser = ref({
-  NomUser: '',
-  PrenomUser: '',
-  AdresseMailUser: '',
-  AdminUser: false,
-  ActifUser: true
-});
 
-const addUser = async () => {
+const addUser = async (formData: any) => {
   try {
     const response = await fetch('/api/admin/users/add', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(newUser.value) // Utiliser newUser.value pour accéder aux données
+      body: JSON.stringify(formData) // Utiliser newUser.value pour accéder aux données
     });
 
     if (!response.ok) {
@@ -120,18 +101,35 @@ const addUser = async () => {
     const addedUser = await response.json();
     users.value.push(addedUser);
     alert('Utilisateur ajouté avec succès');
+    closeModal();
+    fetchUsers();
 
-    newUser.value = {
-      NomUser: '',
-      PrenomUser: '',
-      AdresseMailUser: '',
-      AdminUser: false,
-      ActifUser: true
-    };
   } catch (error) {
     console.error('Erreur :', error);
     errorMessage.value =
       error instanceof Error ? error.message : "Impossible d'ajouter l'utilisateur.";
+  }
+};
+
+const deleteUser = async (userId: number) => {
+  try {
+    const response = await fetch(`/api/admin/users/delete/${userId}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Erreur lors de la suppression de l'utilisateur");
+    }
+
+    // Remove the user from the local list
+    users.value = users.value.filter((user) => user.IdUser !== userId);
+
+    alert('Utilisateur supprimé avec succès');
+  } catch (error) {
+    console.error('Erreur :', error);
+    errorMessage.value =
+      error instanceof Error ? error.message : "Impossible de supprimer l'utilisateur.";
   }
 };
 
@@ -148,68 +146,79 @@ function openModal() {
 function closeModal() {
   isModalOpen.value = false;
 }
+
+//Type de données pour le formulaire
+const employeeFields = [
+  {
+    type: 'text',
+    name: 'NomUser',
+    label: 'Nom',
+    required: true
+  },
+  {
+    type: 'text',
+    name: 'PrenomUser',
+    label: 'Prénom',
+    required: true,
+    validation: (value: string) =>
+      value.length < 2 ? 'Le prénom doit avoir au moins 2 caractères' : null
+  },
+  {
+    type: 'email',
+    name: 'AdresseMailUser',
+    label: 'Email',
+    required: true,
+    placeholder: 'exemple@entreprise.com',
+    validation: (value: string) =>
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? 'Email invalide' : null
+  },
+  {
+    type: 'checkbox',
+    name: 'AdminUser',
+    label: 'Admin'
+  },
+  {
+    type: 'checkbox',
+    name: 'ActifUser',
+    label: 'Compte actif'
+  }
+];
 </script>
 
 <template>
   <div class="user-management-container">
     <div class="user-management-content">
       <h1>Gestion des utilisateurs</h1>
-      
+
       <div v-if="loading" class="loading-message">Chargement...</div>
       <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-      
+
       <div class="dynamic-table-wrapper" v-if="!loading && !errorMessage">
-        <DynamicTable 
+        <DynamicTable
           title="Liste des utilisateurs"
           :columns="columns"
           :initialData="users"
           ref="tableRef"
           @update:rows="updateRows"
+          @delete-row="(index) => deleteUser(users[index].IdUser)"
         />
       </div>
-      
+
       <div class="action-buttons">
         <button @click="saveData" class="BT" :disabled="loading">Sauvegarder</button>
-        <button 
-          v-if="!isModalOpen"
-          @click="openModal"
-          class="BT"
-        >
-          Ajouter un Employé
-        </button>
+        <button v-if="!isModalOpen" @click="openModal" class="BT">Ajouter un Utilisateur</button>
       </div>
     </div>
 
     <div v-if="isModalOpen" class="modal-overlay">
       <div class="modal-content">
         <h1>Ajouter un nouvel utilisateur</h1>
-        <form @submit.prevent="addUser">
-          <div class="form-group">
-            <input v-model="newUser.NomUser" placeholder="Nom" />
-            <input v-model="newUser.PrenomUser" placeholder="Prénom" />
-            <input v-model="newUser.AdresseMailUser" placeholder="Email" />
-          </div>
-          <div class="form-group checkbox-group">
-            <label>
-              <input type="checkbox" v-model="newUser.AdminUser" />
-              Admin
-            </label>
-            <label>
-              <input type="checkbox" v-model="newUser.ActifUser" />
-              Actif
-            </label>
-          </div>
-          <div class="modal-actions">
-            <button type="submit" @click="closeModal">Ajouter</button>
-            <button 
-              type="button"
-              @click="closeModal"
-              class="cancel-button"
-            >
-              Annuler
-            </button>
-          </div>
-        </form>
+        <DynamicForm
+          :fields="employeeFields"
+          submit-label="Enregistrer l'employé"
+          @submit="addUser"
+          @cancel="closeModal"
+        />
       </div>
     </div>
   </div>
@@ -380,7 +389,7 @@ tbody td {
   transition: all 0.3s ease;
 }
 
-.modal-actions button[type="submit"] {
+.modal-actions button[type='submit'] {
   background-color: #2ecc71;
   color: white;
 }

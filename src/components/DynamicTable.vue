@@ -14,6 +14,7 @@ interface Row {
 
 const emit = defineEmits<{
   (event: 'update:rows', rows: Row[]): void;
+  (event: 'delete-row', index: number): void;
 }>();
 
 // Définir les props pour rendre le tableau dynamique
@@ -42,6 +43,7 @@ watch(rows, (newRows) => {
 
 // Supprimer une ligne
 const deleteRow = (index: number) => {
+  emit('delete-row', index);
   rows.value.splice(index, 1);
 };
 
@@ -68,7 +70,7 @@ defineExpose({
   directives: {
     autoResize: autoResizeDirective
   },
-  rows: getExposedRows()
+  rows: rows.value, getExposedRows
 });
 </script>
 
