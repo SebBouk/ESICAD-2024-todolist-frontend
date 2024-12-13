@@ -25,6 +25,14 @@ const props = defineProps({
   initialData: { type: Array as () => Row[], default: () => [] }
 });
 
+const convertToLocalISODate = (dateString: string): string => {
+  if (!dateString) return '';
+  const localDate = new Date(dateString);
+  localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset()); // Ajuster pour le fuseau horaire local
+  return localDate.toISOString().split('T')[0]; // Formater la date en ISO local
+};
+
+
 // Convertir une date au format ISO pour l'input type="date"
 const convertToISODate = (dateString: string): string => {
   if (!dateString) return '';
@@ -49,25 +57,13 @@ const rows = ref<Row[]>(
       if (col.isDate) {
         // Convertit la date au format ISO pour les inputs
         if (row[col.key]) {
-          convertedRow[col.key] = convertToISODate(row[col.key]);
+          convertedRow[col.key] = convertToLocalISODate(row[col.key]);
         }
       }
     });
     return convertedRow;
   })
 );
-
-const formatDate = (dateString: string): string => {
-  if (!dateString) return '';
-  // Si déjà au format JJ-MM-AAAA, retournez tel quel
-  if (/^\d{2}-\d{2}-\d{4}$/.test(dateString)) return dateString;
-
-  // Si au format AAAA-MM-JJ (format ISO), convertissez
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-    return convertToDisplayDate(dateString);
-  }
-  return dateString;
-};
 
 // Observer les modifications des données locales
 watch(rows, (newRows) => {
