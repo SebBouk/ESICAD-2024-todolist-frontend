@@ -6,6 +6,7 @@ interface Column {
   label: string;
   key: string;
   isBoolean?: boolean;
+  isDate?: boolean;
 }
 
 interface Row {
@@ -24,6 +25,19 @@ const props = defineProps({
   initialData: { type: Array as () => Row[], default: () => [] }
 });
 
+// Convertir une date au format ISO pour l'input type="date"
+const convertToISODate = (dateString: string): string => {
+  if (!dateString) return '';
+  return new Date(dateString).toISOString().split('T')[0]; // AAAA-MM-JJ
+};
+
+// Convertir une date au format d'affichage JJ-MM-AAAA
+const convertToDisplayDate = (dateString: string): string => {
+  if (!dateString) return '';
+  const [year, month, day] = dateString.split('-');
+  return `${day}-${month}-${year}`;
+};
+
 // Données locales basées sur les `props`
 const rows = ref<Row[]>(
   props.initialData.map((row) => {
@@ -32,13 +46,43 @@ const rows = ref<Row[]>(
       if (col.isBoolean && typeof row[col.key] === 'number') {
         convertedRow[col.key] = !!row[col.key]; // Convertit 0/1 en false/true
       }
+      if (col.isDate) {
+        // Convertit la date au format ISO pour les inputs
+        if (row[col.key]) {
+          convertedRow[col.key] = convertToISODate(row[col.key]);
+        }
+      }
     });
     return convertedRow;
   })
 );
 
+const formatDate = (dateString: string): string => {
+  if (!dateString) return '';
+  // Si déjà au format JJ-MM-AAAA, retournez tel quel
+  if (/^\d{2}-\d{2}-\d{4}$/.test(dateString)) return dateString;
+
+  // Si au format AAAA-MM-JJ (format ISO), convertissez
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return convertToDisplayDate(dateString);
+  }
+  return dateString;
+};
+
+// Observer les modifications des données locales
 watch(rows, (newRows) => {
-  emit('update:rows', newRows);
+  // Mettre à jour les lignes exposées avec des dates au format AAAA-MM-JJ
+  const formattedRows = newRows.map((row) => {
+    const updatedRow: Row = { ...row };
+    props.columns.forEach((col) => {
+      if (col.isDate && updatedRow[col.key]) {
+        updatedRow[col.key] = convertToISODate(updatedRow[col.key]);
+      }
+    });
+    return updatedRow;
+  });
+
+  emit('update:rows', formattedRows);
 });
 
 // Supprimer une ligne
@@ -58,7 +102,11 @@ const getExposedRows = () => {
     const convertedRow: Row = { ...row };
     props.columns.forEach((col) => {
       if (col.isBoolean) {
-        convertedRow[col.key] = row[col.key] ? 1 : 0; // Convertit true/false en 1/0
+        convertedRow[col.key] = row[col.key] ? 1 : 0; // Convertir booléen en 1/0
+      }
+      if (col.isDate && row[col.key]) {
+        // Convertit la date au format ISO pour la base de données
+        convertedRow[col.key] = convertToISODate(row[col.key]);
       }
     });
     return convertedRow;
@@ -70,7 +118,8 @@ defineExpose({
   directives: {
     autoResize: autoResizeDirective
   },
-  rows: rows.value, getExposedRows
+  rows: rows.value,
+  getExposedRows
 });
 </script>
 
@@ -89,7 +138,10 @@ defineExpose({
         <!-- Affiche les lignes -->
         <tr v-for="(row, rowIndex) in rows" :key="rowIndex">
           <td v-for="(column, colIndex) in columns" :key="colIndex">
-            <div v-if="column.isBoolean">
+            <div v-if="column.isDate">
+              <input type="date" v-model="rows[rowIndex][column.key]" :style="{ width: 'auto' }" />
+            </div>
+            <div v-else-if="column.isBoolean">
               <button @click="toggleValue(row, column.key)" :class="{ active: row[column.key] }">
                 {{ row[column.key] ? 'Actif' : 'Inactif' }}
               </button>
@@ -217,5 +269,4 @@ button[type='button'] {
 button:hover {
   opacity: 0.9;
 }
-
 </style>

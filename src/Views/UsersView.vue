@@ -93,7 +93,7 @@ const addUser = async (formData: any) => {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(formData) // Utiliser newUser.value pour accéder aux données
+      body: JSON.stringify(formData) 
     });
 
     if (!response.ok) {
