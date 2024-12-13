@@ -13,15 +13,17 @@ interface Column {
   key: string;
   isBoolean?: boolean;
   isDate?: boolean;
+  activeLabel?: string;
+  inactiveLabel?: string;
 }
 
 const columns = ref<Column[]>([
   { label: 'ID', key: 'IdTache' },
   { label: 'Nom', key: 'NomTache' },
   { label: 'Echeance', key: 'EcheanceTache', isDate: true },
-  { label: 'Creation', key: 'datecreaTache', isBoolean: true },
+  { label: 'Creation', key: 'datecreaTache', isDate: true },
   { label: 'Mise a jour', key: 'datemajTache', isDate: true },
-  { label: 'Etat', key: 'EtatTache', isBoolean: true }
+  { label: 'Etat', key: 'EtatTache', isBoolean: true, activeLabel:'Terminé', inactiveLabel:'En cours'}
 ]);
 
 const tableRef = ref<InstanceType<typeof DynamicTable> | null>(null);
