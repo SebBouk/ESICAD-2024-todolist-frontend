@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, defineProps, defineEmits, computed } from 'vue';
+import { ref, computed } from 'vue';
 
 // Types for form field definition
-interface FormField {
-  type: 'text' | 'email' | 'number' | 'checkbox' | 'select'| 'textarea';
+export interface FormField {
+  type: 'text' | 'email' | 'number' | 'checkbox' | 'select' | 'textarea' | 'date';
   name: string;
   label: string;
   placeholder?: string;
@@ -19,16 +19,17 @@ const props = defineProps<{
   submitLabel?: string;
 }>();
 
-
-
 // Dynamic form data
 const formData = ref<Record<string, any>>(
-  props.initialData 
-    ? { ...props.initialData } 
-    : props.fields.reduce((acc, field) => {
-        acc[field.name] = field.type === 'checkbox' ? false : '';
-        return acc;
-      }, {} as Record<string, any>)
+  props.initialData
+    ? { ...props.initialData }
+    : props.fields.reduce(
+        (acc, field) => {
+          acc[field.name] = field.type === 'checkbox' ? false : '';
+          return acc;
+        },
+        {} as Record<string, any>
+      )
 );
 
 // Validation errors
@@ -45,7 +46,7 @@ const validateField = (field: FormField) => {
 };
 const validateForm = () => {
   errors.value = {};
-  props.fields.forEach(field => {
+  props.fields.forEach((field) => {
     const error = validateField(field);
     if (error) {
       errors.value[field.name] = error;
@@ -81,15 +82,11 @@ const emit = defineEmits<{
 <template>
   <div class="dynamic-form">
     <form @submit.prevent="onSubmit">
-      <div 
-        v-for="field in fields" 
-        :key="field.name" 
-        class="form-group"
-      >
+      <div v-for="field in fields" :key="field.name" class="form-group">
         <label :for="field.name">{{ field.label }}</label>
-        
+
         <!-- Text Input -->
-        <input 
+        <input
           v-if="field.type === 'text' || field.type === 'email' || field.type === 'number'"
           :type="field.type"
           :id="field.name"
@@ -98,10 +95,10 @@ const emit = defineEmits<{
           v-model="formData[field.name]"
           :class="{ 'input-error': errors[field.name] }"
         />
-        
+
         <!-- Checkbox Input -->
         <div v-else-if="field.type === 'checkbox'" class="checkbox-group">
-          <input 
+          <input
             type="checkbox"
             :id="field.name"
             :name="field.name"
@@ -109,61 +106,53 @@ const emit = defineEmits<{
           />
           <label :for="field.name">{{ field.label }}</label>
         </div>
-        
+        <input
+          v-else-if="field.type === 'date'"
+          type="date"
+          :id="field.name"
+          :name="field.name"
+          v-model="formData[field.name]"
+          :class="{ 'input-error': errors[field.name] }"
+        />
         <!-- Select Input -->
-        <select 
+        <select
           v-else-if="field.type === 'select'"
           :id="field.name"
           :name="field.name"
           v-model="formData[field.name]"
           :class="{ 'input-error': errors[field.name] }"
         >
-          <option 
-            v-for="option in field.options" 
-            :key="option.value" 
-            :value="option.value"
-          >
+          <option v-for="option in field.options" :key="option.value" :value="option.value">
             {{ option.label }}
           </option>
         </select>
         <!-- Textarea Input -->
-        <textarea 
-        v-else-if="field.type === 'textarea'"
-        :id="field.name"
-        :name="field.name"
-        :placeholder="field.placeholder"
-        v-model="formData[field.name]"
-        :class="{ 'input-error': errors[field.name] }"
+        <textarea
+          v-else-if="field.type === 'textarea'"
+          :id="field.name"
+          :name="field.name"
+          :placeholder="field.placeholder"
+          v-model="formData[field.name]"
+          :class="{ 'input-error': errors[field.name] }"
         ></textarea>
 
-        
         <!-- Error Message -->
-        <p 
-          v-if="errors[field.name]" 
-          class="error-message"
-        >
+        <p v-if="errors[field.name]" class="error-message">
           {{ errors[field.name] }}
         </p>
       </div>
-      
+
       <div class="form-actions">
         <button type="submit" class="submit-btn">
           {{ submitLabel || 'Soumettre' }}
         </button>
-        <button 
-          type="button" 
-          class="cancel-btn" 
-          @click="onCancel"
-        >
-          Annuler
-        </button>
+        <button type="button" class="cancel-btn" @click="onCancel">Annuler</button>
       </div>
     </form>
   </div>
 </template>
 
 <style scoped>
-
 .dynamic-form {
   max-width: 500px;
   margin: 0 auto;

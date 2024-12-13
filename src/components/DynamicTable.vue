@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, defineEmits, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { autoResizeDirective } from './autoResizeDirective';
 
 interface Column {

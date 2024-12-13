@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import TachesViews from '@/Views/TachesViews.vue';
 import UsersView from '@/Views/UsersView.vue';
-import UsersViewTest from '../Views/UsersViewTest.vue';
+import HomeView from '../Views/HomeView.vue';
 
 
 const router = createRouter({
@@ -10,7 +10,7 @@ const router = createRouter({
     {
       path:'/',
       name:'home',
-      component: UsersViewTest
+      component: HomeView
     },
     {
       path:'/users',
@@ -18,8 +18,8 @@ const router = createRouter({
       component: UsersView
     },
     {
-      path:'/taches',
-      name:'taches',
+      path:'/tache',
+      name:'tache',
       component: TachesViews
     },
   ]

@@ -1,16 +1,21 @@
+<script setup lang="ts"> 
+import NavComponent from '@/components/NavComponent.vue';
+
+
+
+
+  </script>
+
 <template>
+  <NavComponent/>
     <div class="home">
       <h1>Bienvenue sur la page d'accueil</h1>
       <p>C'est ici que commence votre aventure !</p>
       <router-link to="/about">En savoir plus sur nous</router-link>
     </div>
+    
   </template>
-  
-  <script>
-  export default {
-    name: 'HomeView',
-  };
-  </script>
+
   
   <style scoped>
   .home {
