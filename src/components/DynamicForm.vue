@@ -80,10 +80,10 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="dynamic-form">
+  <div class="max-w-lg mx-auto p-6 bg-white rounded-lg shadow-md">
     <form @submit.prevent="onSubmit">
-      <div v-for="field in fields" :key="field.name" class="form-group">
-        <label :for="field.name">{{ field.label }}</label>
+      <div v-for="field in fields" :key="field.name" class="mb-4">
+        <label :for="field.name" class="block text-sm font-semibold text-gray-700 mb-2">{{ field.label }}</label>
 
         <!-- Text Input -->
         <input
@@ -93,39 +93,53 @@ const emit = defineEmits<{
           :name="field.name"
           :placeholder="field.placeholder"
           v-model="formData[field.name]"
-          :class="{ 'input-error': errors[field.name] }"
+          :class="{
+            'block w-full px-3 py-2 border rounded-md text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500': true,
+            'border-red-500': errors[field.name]
+          }"
         />
 
         <!-- Checkbox Input -->
-        <div v-else-if="field.type === 'checkbox'" class="checkbox-group">
+        <div v-else-if="field.type === 'checkbox'" class="flex items-center mt-2">
           <input
             type="checkbox"
             :id="field.name"
             :name="field.name"
             v-model="formData[field.name]"
+            class="h-4 w-4 text-indigo-600 border-gray-300 rounded"
           />
-          <label :for="field.name">{{ field.label }}</label>
+          <label :for="field.name" class="ml-2 text-sm text-gray-700">{{ field.label }}</label>
         </div>
+
+        <!-- Date Input -->
         <input
           v-else-if="field.type === 'date'"
           type="date"
           :id="field.name"
           :name="field.name"
           v-model="formData[field.name]"
-          :class="{ 'input-error': errors[field.name] }"
+          :class="{
+            'block w-full px-3 py-2 border rounded-md text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500': true,
+            'border-red-500': errors[field.name]
+          }"
         />
+
         <!-- Select Input -->
         <select
           v-else-if="field.type === 'select'"
           :id="field.name"
           :name="field.name"
           v-model="formData[field.name]"
-          :class="{ 'input-error': errors[field.name] }"
+          :class="{
+            'block w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500': true,
+            'border-red-500': errors[field.name]
+          }"
         >
           <option v-for="option in field.options" :key="option.value" :value="option.value">
             {{ option.label }}
           </option>
         </select>
+
         <!-- Textarea Input -->
         <textarea
           v-else-if="field.type === 'textarea'"
@@ -133,104 +147,41 @@ const emit = defineEmits<{
           :name="field.name"
           :placeholder="field.placeholder"
           v-model="formData[field.name]"
-          :class="{ 'input-error': errors[field.name] }"
+          :class="{
+            'block w-full px-3 py-2 border rounded-md text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500': true,
+            'border-red-500': errors[field.name]
+          }"
         ></textarea>
 
         <!-- Error Message -->
-        <p v-if="errors[field.name]" class="error-message">
+        <p v-if="errors[field.name]" class="text-red-500 text-xs mt-1">
           {{ errors[field.name] }}
         </p>
       </div>
 
-      <div class="form-actions">
-        <button type="submit" class="submit-btn">
+      <div class="flex justify-between gap-4">
+        <button
+          type="submit"
+          :class="{
+            'w-full py-2 px-4 rounded-md font-semibold text-white bg-green-500 hover:bg-green-600 focus:outline-none': true,
+            'opacity-50 cursor-not-allowed': !isFormValid
+          }"
+          :disabled="!isFormValid"
+        >
           {{ submitLabel || 'Soumettre' }}
         </button>
-        <button type="button" class="cancel-btn" @click="onCancel">Annuler</button>
+        <button
+          type="button"
+          @click="onCancel"
+          class="w-full py-2 px-4 rounded-md font-semibold text-white bg-red-500 hover:bg-red-600 focus:outline-none"
+        >
+          Annuler
+        </button>
       </div>
     </form>
   </div>
 </template>
 
 <style scoped>
-.dynamic-form {
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.checkbox-group {
-  display: flex;
-  align-items: center;
-}
-
-.checkbox-group input {
-  width: auto;
-  margin-right: 10px;
-}
-
-.input-error {
-  border-color: #e74c3c;
-}
-
-.error-message {
-  color: #e74c3c;
-  font-size: 0.8em;
-  margin-top: 5px;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.submit-btn,
-.cancel-btn {
-  flex-grow: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.submit-btn {
-  background-color: #2ecc71;
-  color: white;
-}
-
-.cancel-btn {
-  background-color: #e74c3c;
-  color: white;
-}
-
-.submit-btn:hover {
-  background-color: #27ae60;
-}
-
-.cancel-btn:hover {
-  background-color: #c0392b;
-}
+/* Le style est désormais géré entièrement par TailwindCSS */
 </style>
