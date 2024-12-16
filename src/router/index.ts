@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import TachesViews from '@/Views/TachesViews.vue';
 import UsersView from '@/Views/UsersView.vue';
 import HomeView from '../Views/HomeView.vue';
+import ListeViews from '@/Views/ListeViews.vue';
 
 
 const router = createRouter({
@@ -22,6 +23,11 @@ const router = createRouter({
       name:'tache',
       component: TachesViews
     },
+    {
+      path:'/listes',
+      name:'liste',
+      component: ListeViews
+    }
   ]
 });
 

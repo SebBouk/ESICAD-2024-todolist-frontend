@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Taches } from '@/models/Taches';
+import { Listes } from '@/models/Listes';
 import { onMounted, ref } from 'vue';
 import DynamicForm, { FormField } from '../components/DynamicForm.vue';
 import DynamicTable from '../components/DynamicTable.vue';
@@ -18,39 +18,39 @@ interface Column {
 }
 
 const columns = ref<Column[]>([
-  { label: 'ID', key: 'IdTache' },
-  { label: 'Nom', key: 'NomTache' },
-  { label: 'Echeance', key: 'EcheanceTache', isDate: true },
-  { label: 'Creation', key: 'datecreaTache', isDate: true },
-  { label: 'Mise a jour', key: 'datemajTache', isDate: true },
-  { label: 'Etat', key: 'EtatTache', isBoolean: true, activeLabel:'Terminé', inactiveLabel:'En cours'}
+  { label: 'ID', key: 'IdListe' },
+  { label: 'Nom', key: 'NomListe' },
+  { label: 'Creation', key: 'datecreaListe', isDate: true },
+  { label: 'Mise a jour', key: 'dateMajListe', isDate: true },
+  { label: 'Archivé', key: 'dateArchivage', isDate: true },
+  { label: 'Etat', key: 'listeArchive', isBoolean: true, activeLabel:'Archivé', inactiveLabel:'En cours'}
 ]);
 
 const tableRef = ref<InstanceType<typeof DynamicTable> | null>(null);
-const tache = ref<Taches[]>([]);
+const liste = ref<Listes[]>([]);
 const loading = ref(false);
 const errorMessage = ref<string | null>(null);
 
 onMounted(async () => {
-  await fetchTaches();
-  console.log('Taches après fetchTaches:', tache.value);
+  await fetchListes();
+  console.log('Taches après fetchListes:', liste.value);
 });
 
-const fetchTaches = async () => {
+const fetchListes = async () => {
   loading.value = true;
   errorMessage.value = null;
   try {
-    const response = await fetch('/api/admin/tache/get');
+    const response = await fetch('/api/admin/listes/get');
     console.log('Response status:', response.status);
     if (!response.ok) {
       console.error('Fetch failed:', await response.text());
       throw new Error('Erreur lors de la récupération des données');
     }
-    tache.value = await response.json();
-    console.log('Taches récupérées:', tache.value);
+    liste.value = await response.json();
+    console.log('Listes récupérées:', liste.value);
   } catch (error) {
     console.error('Erreur :', error);
-    errorMessage.value = 'Impossible de charger les taches.';
+    errorMessage.value = 'Impossible de charger les listes.';
   } finally {
     loading.value = false;
   }
@@ -68,7 +68,7 @@ const saveData = async () => {
   errorMessage.value = null;
 
   try {
-    const response = await fetch('/api/admin/tache/save', {
+    const response = await fetch('/api/admin/listes/save', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -82,7 +82,7 @@ const saveData = async () => {
     }
 
     toast.success('Données sauvegardées avec succès !');
-    await fetchTaches(); // Refresh data after successful save
+    await fetchListes(); // Refresh data after successful save
   } catch (error) {
     console.error('Erreur :', error);
     errorMessage.value =
@@ -94,10 +94,10 @@ const saveData = async () => {
   console.log('Méthodes disponibles:', Object.keys(tableRef.value || {}));
 };
 
-const addTaches = async (formData: any) => {
+const addListe = async (formData: any) => {
   try {
     console.log('Données du formulaire :', formData);
-    const response = await fetch('/api/admin/tache/add', {
+    const response = await fetch('/api/admin/listes/add', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -112,35 +112,35 @@ const addTaches = async (formData: any) => {
     }
 
     const addedTache = await response.json();
-    tache.value.push(addedTache);
-    toast.success('Tache ajouté avec succès');
+    liste.value.push(addedTache);
+    toast.success('Liste ajouté avec succès');
     closeModal();
-    fetchTaches();
+    fetchListes();
   } catch (error) {
     console.error('Erreur :', error);
     errorMessage.value = error instanceof Error ? error.message : "Impossible d'ajouter la tache.";
   }
 };
 
-const deleteTache = async (IdTache: number) => {
+const deleteListe = async (IdListe: number) => {
   try {
-    const response = await fetch(`/api/admin/tache/delete/${IdTache}`, {
+    const response = await fetch(`/api/admin/listes/delete/${IdListe}`, {
       method: 'DELETE'
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || "Erreur lors de la suppression de l'utilisateur");
+      throw new Error(errorData.error || "Erreur lors de la suppression de la liste");
     }
 
     // Remove the user from the local list
-    tache.value = tache.value.filter((tache) => tache.IdTache !== IdTache);
+    liste.value = liste.value.filter((liste) => liste.IdListe !== IdListe);
 
-    toast.success('Tache supprimé avec succès');
+    toast.success('Liste supprimé avec succès');
   } catch (error) {
     console.error('Erreur :', error);
     errorMessage.value =
-      error instanceof Error ? error.message : 'Impossible de supprimer la tache.';
+      error instanceof Error ? error.message : 'Impossible de supprimer la liste.';
   }
 };
 const handleRowSave = async (row: any, index: number) => {
@@ -172,7 +172,7 @@ const handleRowSave = async (row: any, index: number) => {
 };
 
 const updateRows = (newRows: any[]) => {
-  tache.value = [...newRows];
+  liste.value = [...newRows];
 };
 
 const isModalOpen = ref(false);
@@ -188,19 +188,13 @@ function closeModal() {
 const tacheFields: FormField[] = [
   {
     type: 'text',
-    name: 'NomTache',
+    name: 'NomListe',
     label: 'Nom',
     required: true
   },
   {
-    type: 'date',
-    name: 'EcheanceTache',
-    label: 'Echeance',
-    required: true
-  },
-  {
     type: 'text',
-    name: 'IdTache',
+    name: 'IdListe',
     label: 'N°',
     required: false,
     placeholder: 'Attribué automatiquement'
@@ -212,36 +206,36 @@ const tacheFields: FormField[] = [
     <NavComponent />
     <div class="user-management-container">
       <div class="user-management-content">
-        <h1>Gestion des taches</h1>
+        <h1>Gestion des listes</h1>
 
         <div v-if="loading" class="loading-message">Chargement...</div>
         <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
         <div class="dynamic-table-wrapper" v-if="!loading && !errorMessage">
           <DynamicTable
-            title="Liste des taches"
+            title="Liste des listes"
             :columns="columns"
-            :initialData="tache"
+            :initialData="liste"
             ref="tableRef"
             @update:rows="updateRows"
-            @delete-row="(index) => deleteTache(tache[index].IdTache)"
+            @delete-row="(index) => deleteListe(liste[index].IdListe)"
             @save-row="handleRowSave"
           />
         </div>
 
         <div class="action-buttons">
           <button @click="saveData" class="BT" :disabled="loading">Sauvegarder</button>
-          <button v-if="!isModalOpen" @click="openModal" class="BT">Ajouter une Tache</button>
+          <button v-if="!isModalOpen" @click="openModal" class="BT">Ajouter une liste</button>
         </div>
       </div>
 
       <div v-if="isModalOpen" class="modal-overlay">
         <div class="modal-content">
-          <h1>Ajouter une nouvelle tache</h1>
+          <h1>Ajouter une nouvelle liste</h1>
           <DynamicForm
             :fields="tacheFields"
-            submit-label="Enregistrer la tache"
-            @submit="addTaches"
+            submit-label="Enregistrer la liste"
+            @submit="addListe"
             @cancel="closeModal"
           />
         </div>

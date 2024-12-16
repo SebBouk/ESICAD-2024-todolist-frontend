@@ -1,7 +1,8 @@
 export interface Listes{
-    idListe : number;
+    IdListe : number;
+    NomListe : string;
     datecreaListe : Date;
-    datemajListe : Date;
+    dateMajListe : Date;
     listeArchive : boolean;
     dateArchivage : Date;
     listePerso : boolean;
