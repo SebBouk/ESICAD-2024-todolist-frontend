@@ -60,6 +60,7 @@ const isMenuOpen = ref(false);
         <RouterLink to="/users" class="nav-link block text-gray-700 hover:text-blue-500">Utilisateur</RouterLink>
         <RouterLink to="/tache" class="nav-link block text-gray-700 hover:text-blue-500">Taches</RouterLink>
         <RouterLink to="/listes" class="nav-link block text-gray-700 hover:text-blue-500">Listes</RouterLink>
+        <RouterLink to="/categories" class="nav-link block text-gray-700 hover:text-blue-500">Categories</RouterLink>
         <!-- <RouterLink to="/commandes" class="nav-link block text-gray-700 hover:text-blue-500">Commandes</RouterLink>
         <RouterLink to="/livraison" class="nav-link block text-gray-700 hover:text-blue-500">Livraisons</RouterLink>
         <RouterLink to="/Tournee" class="nav-link block text-gray-700 hover:text-blue-500">Tournées</RouterLink>

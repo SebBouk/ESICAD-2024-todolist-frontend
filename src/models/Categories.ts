@@ -1,5 +1,5 @@
 export interface Categories{
-    idCategorie : number;
-    nomCategorie : string;
+    IdCategorie : number;
+    NomCategorie : string;
   }
   

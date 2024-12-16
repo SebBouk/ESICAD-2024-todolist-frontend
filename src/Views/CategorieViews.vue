@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { Listes } from '@/models/Listes';
-import { onMounted, ref, computed } from 'vue';
+import { Categories } from '@/models/Categories';
+import { onMounted, ref } from 'vue';
 import DynamicForm, { FormField } from '../components/DynamicForm.vue';
 import DynamicTable from '../components/DynamicTable.vue';
 import { useToast } from 'vue-toastification';
 import NavComponent from '@/components/NavComponent.vue';
-import { Categories } from '@/models/Categories';
 
 const toast = useToast();
 
@@ -19,42 +18,35 @@ interface Column {
 }
 
 const columns = ref<Column[]>([
-  { label: 'ID', key: 'IdListe' },
-  { label: 'Nom', key: 'NomListe' },
-  { label: 'Creation', key: 'datecreaListe', isDate: true },
-  { label: 'Mise a jour', key: 'dateMajListe', isDate: true },
-  { label: 'Archivé', key: 'dateArchivage', isDate: true },
-  { label: 'Etat', key: 'listeArchive', isBoolean: true, activeLabel:'Archivé', inactiveLabel:'En cours'},
-  { label: 'Categorie', key: 'NomCategorie'}
-]);
+  { label: 'ID', key: 'IdCategorie' },
+  { label: 'Nom', key: 'NomCategorie' },
+ ]);
 
 const tableRef = ref<InstanceType<typeof DynamicTable> | null>(null);
-const liste = ref<Listes[]>([]);
-const categories = ref<Categories[]>([]);
+const categorie = ref<Categories[]>([]);
 const loading = ref(false);
 const errorMessage = ref<string | null>(null);
 
-
 onMounted(async () => {
-  await Promise.all([fetchListes(), fetchCategories()]);
-  console.log('Listes après fetchListes:', liste.value);
+  await fetchCategorie();
+  console.log('Categories après fetchCategorie:', categorie.value);
 });
 
-const fetchListes = async () => {
+const fetchCategorie = async () => {
   loading.value = true;
   errorMessage.value = null;
   try {
-    const response = await fetch('/api/admin/listes/get');
+    const response = await fetch('/api/admin/categories/get');
     console.log('Response status:', response.status);
     if (!response.ok) {
       console.error('Fetch failed:', await response.text());
       throw new Error('Erreur lors de la récupération des données');
     }
-    liste.value = await response.json();
-    console.log('Listes récupérées:', liste.value);
+    categorie.value = await response.json();
+    console.log('Categorie récupérées:', categorie.value);
   } catch (error) {
     console.error('Erreur :', error);
-    errorMessage.value = 'Impossible de charger les listes.';
+    errorMessage.value = 'Impossible de charger les categories.';
   } finally {
     loading.value = false;
   }
@@ -72,7 +64,7 @@ const saveData = async () => {
   errorMessage.value = null;
 
   try {
-    const response = await fetch('/api/admin/listes/save', {
+    const response = await fetch('/api/admin/categories/save', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -86,7 +78,7 @@ const saveData = async () => {
     }
 
     toast.success('Données sauvegardées avec succès !');
-    await fetchListes(); // Refresh data after successful save
+    await fetchCategorie(); // Refresh data after successful save
   } catch (error) {
     console.error('Erreur :', error);
     errorMessage.value =
@@ -98,10 +90,10 @@ const saveData = async () => {
   console.log('Méthodes disponibles:', Object.keys(tableRef.value || {}));
 };
 
-const addListe = async (formData: any) => {
+const addCategorie = async (formData: any) => {
   try {
     console.log('Données du formulaire :', formData);
-    const response = await fetch('/api/admin/listes/add', {
+    const response = await fetch('/api/admin/categories/add', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -112,39 +104,39 @@ const addListe = async (formData: any) => {
     if (!response.ok) {
       const errorData = await response.json();
       console.error('Erreur côté serveur :', errorData);
-      throw new Error(errorData.error || "Erreur lors de l'ajout de la liste");
+      throw new Error(errorData.error || "Erreur lors de l'ajout de la categorie");
     }
 
-    const addedListe = await response.json();
-    liste.value.push(addedListe);
-    toast.success('Liste ajouté avec succès');
+    const addedCategorie = await response.json();
+    categorie.value.push(addedCategorie);
+    toast.success('Categorie ajouté avec succès');
     closeModal();
-    fetchListes();
+    fetchCategorie();
   } catch (error) {
     console.error('Erreur :', error);
-    errorMessage.value = error instanceof Error ? error.message : "Impossible d'ajouter la liste.";
+    errorMessage.value = error instanceof Error ? error.message : "Impossible d'ajouter la categorie.";
   }
 };
 
-const deleteListe = async (IdListe: number) => {
+const deleteCategorie = async (IdCategorie: number) => {
   try {
-    const response = await fetch(`/api/admin/listes/delete/${IdListe}`, {
+    const response = await fetch(`/api/admin/categories/delete/${IdCategorie}`, {
       method: 'DELETE'
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || "Erreur lors de la suppression de la liste");
+      throw new Error(errorData.error || "Erreur lors de la suppression de la categorie");
     }
 
     // Remove the user from the local list
-    liste.value = liste.value.filter((liste) => liste.IdListe !== IdListe);
+    categorie.value = categorie.value.filter((categorie) => categorie.IdCategorie !== IdCategorie);
 
-    toast.success('Liste supprimé avec succès');
+    toast.success('Categorie supprimé avec succès');
   } catch (error) {
     console.error('Erreur :', error);
     errorMessage.value =
-      error instanceof Error ? error.message : 'Impossible de supprimer la liste.';
+      error instanceof Error ? error.message : 'Impossible de supprimer la categorie.';
   }
 };
 const handleRowSave = async (row: any, index: number) => {
@@ -175,28 +167,13 @@ const handleRowSave = async (row: any, index: number) => {
   }
 };
 
-const fetchCategories = async () => {
-  try {
-    const response = await fetch('/api/admin/categories/get');
-    if (!response.ok) {
-      throw new Error('Erreur lors de la récupération des catégories');
-    }
-    const data = await response.json();
-    categories.value = data;
-  } catch (error) {
-    console.error('Erreur lors de la récupération des catégories:', error);
-    errorMessage.value = "Impossible de charger les catégories.";
-  }
-};
-
 const updateRows = (newRows: any[]) => {
-  liste.value = [...newRows];
+  categorie.value = [...newRows];
 };
 
 const isModalOpen = ref(false);
 
-async function openModal() {
-  await fetchCategories();
+function openModal() {
   isModalOpen.value = true;
 }
 
@@ -204,72 +181,57 @@ function closeModal() {
   isModalOpen.value = false;
 }
 
-const listeFields = computed((): FormField[] => [
+const categorieFields: FormField[] = [
   {
     type: 'text',
-    name: 'NomListe',
+    name: 'NomCategorie',
     label: 'Nom',
     required: true
   },
   {
     type: 'text',
-    name: 'IdListe',
+    name: 'IdCategorie',
     label: 'N°',
     required: false,
     placeholder: 'Attribué automatiquement'
-  },
-  {
-    type: 'checkbox',
-    name: 'listePerso',
-    label: 'Liste personnel ?'
-  },
-  {
-    type: 'select',
-    name: 'IdCategorie',
-    label:'Categorie',
-    required: true,
-    options: categories.value.map(cat => ({
-      value: cat.IdCategorie,
-      label: cat.NomCategorie
-    }))
   }
-]);
+];
 </script>
 
   <template>
     <NavComponent />
     <div class="user-management-container">
       <div class="user-management-content">
-        <h1>Gestion des listes</h1>
+        <h1>Gestion des categories</h1>
 
         <div v-if="loading" class="loading-message">Chargement...</div>
         <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
         <div class="dynamic-table-wrapper" v-if="!loading && !errorMessage">
           <DynamicTable
-            title="Liste des listes"
+            title="Liste des categories"
             :columns="columns"
-            :initialData="liste"
+            :initialData="categorie"
             ref="tableRef"
             @update:rows="updateRows"
-            @delete-row="(index) => deleteListe(liste[index].IdListe)"
+            @delete-row="(index) => deleteCategorie(categorie[index].IdCategorie)"
             @save-row="handleRowSave"
           />
         </div>
 
         <div class="action-buttons">
           <button @click="saveData" class="BT" :disabled="loading">Sauvegarder</button>
-          <button v-if="!isModalOpen" @click="openModal" class="BT">Ajouter une liste</button>
+          <button v-if="!isModalOpen" @click="openModal" class="BT">Ajouter une categorie</button>
         </div>
       </div>
 
       <div v-if="isModalOpen" class="modal-overlay">
         <div class="modal-content">
-          <h1>Ajouter une nouvelle liste</h1>
+          <h1>Ajouter une nouvelle categorie</h1>
           <DynamicForm
-            :fields="listeFields"
-            submit-label="Enregistrer la liste"
-            @submit="addListe"
+            :fields="categorieFields"
+            submit-label="Enregistrer la categorie"
+            @submit="addCategorie"
             @cancel="closeModal"
           />
         </div>

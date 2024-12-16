@@ -3,6 +3,7 @@ import TachesViews from '@/Views/TachesViews.vue';
 import UsersView from '@/Views/UsersView.vue';
 import HomeView from '../Views/HomeView.vue';
 import ListeViews from '@/Views/ListeViews.vue';
+import CategorieViews from '@/Views/CategorieViews.vue';
 
 
 const router = createRouter({
@@ -27,6 +28,11 @@ const router = createRouter({
       path:'/listes',
       name:'liste',
       component: ListeViews
+    },
+    {
+      path:'/categories',
+      name:'categories',
+      component:CategorieViews
     }
   ]
 });
