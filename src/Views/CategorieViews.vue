@@ -240,7 +240,6 @@ const categorieFields: FormField[] = [
   </template>
 
 <style scoped>
-/* Global Container Styles */
 .user-management-container {
   font-family: 'Arial', sans-serif;
   background-color: #f4f6f9;

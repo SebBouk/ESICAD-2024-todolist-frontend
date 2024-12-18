@@ -22,7 +22,7 @@ const username = computed(() => {
   if (token) {
     try {
       const user = JSON.parse(atob(token.split('.')[1]));
-      return user.NomEmploye || 'Utilisateur';
+      return user.NomUser || 'Utilisateur';
     } catch (e) {
       console.error('Erreur de décodage du token', e);
       return 'Utilisateur';
@@ -56,7 +56,7 @@ const isMenuOpen = ref(false);
         :class="{'block': isMenuOpen, 'hidden': !isMenuOpen}"
         class="md:flex space-y-4 md:space-y-0 md:space-x-4 mt-4 md:mt-0"
       >
-        <RouterLink to="/" class="nav-link block text-gray-700 hover:text-blue-500">Accueil</RouterLink>
+        <RouterLink to="/home" class="nav-link block text-gray-700 hover:text-blue-500">Accueil</RouterLink>
         <RouterLink to="/users" class="nav-link block text-gray-700 hover:text-blue-500">Utilisateur</RouterLink>
         <RouterLink to="/tache" class="nav-link block text-gray-700 hover:text-blue-500">Taches</RouterLink>
         <RouterLink to="/listes" class="nav-link block text-gray-700 hover:text-blue-500">Listes</RouterLink>
