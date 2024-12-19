@@ -1,155 +1,236 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
+
+// Variables réactives
+const AdresseMailUser = ref('');
+const MdpUser = ref('');
+const newPassword = ref('');
+const confirmPassword = ref('');
+const adminPassword = ref('');
+const isModalOpen = ref(false);
+const errorMessage = ref<string | null>(null);
+
+// Valeur correcte pour le mot de passe admin
+const adminPasswordCorrect = 'admin123';
+
+// Accès au routeur
+const router = useRouter();
+
+// Méthodes
+const submitForm = async () => {
+  try {
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        AdresseMailUser: AdresseMailUser.value,
+        MdpUser: MdpUser.value,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      toast.success('Connexion réussie !');
+      document.cookie = `token=${data.token};path=/; max-age=${60 * 60}; secure;`;
+      if (data.AdminUser === 0) {
+        router.push(`/home`);
+      } else if (data.AdminUser === 1) {
+        router.push('/home');
+      } else {
+        errorMessage.value = 'Rôle inconnu, redirection impossible.';
+      }
+    } else {
+      errorMessage.value = data.message || 'Erreur lors de la connexion';
+    }
+  } catch (error) {
+    console.error('Erreur de connexion :', error);
+    errorMessage.value = 'Erreur de connexion. Veuillez réessayer.';
+  }
+};
+
+const openModal = () => {
+  isModalOpen.value = true;
+};
+
+const closeModal = () => {
+  isModalOpen.value = false;
+};
+
+const updatePassword = async () => {
+  if (newPassword.value !== confirmPassword.value) {
+    toast.error('Les mots de passe ne correspondent pas.');
+    return;
+  }
+
+  if (adminPassword.value !== adminPasswordCorrect) {
+    toast.error('Le mot de passe administrateur est incorrect.');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/update-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        AdresseMailUser: AdresseMailUser.value,
+        newPassword: newPassword.value,
+      }),
+    });
+
+    if (response.ok) {
+      toast.success('Mot de passe mis à jour avec succès.');
+      closeModal();
+    } else {
+      const data = await response.json();
+      toast.error( data.message || 'Erreur lors de la mise à jour du mot de passe.');
+    }
+  } catch (error) {
+    console.error('Erreur :', error);
+    toast.error( 'Erreur lors de la mise à jour du mot de passe.');
+  }
+};
+</script>
+
 <template>
-    <div class="login">
-      <h1>Connexion</h1>
-      <form @submit.prevent="submitForm">
-        <div class="form-group">
-          <label for="email">Adresse e-mail</label>
-          <input
-            type="email"
-            id="email"
-            v-model="email"
-            required
-            placeholder="Entrez votre adresse e-mail"
-          />
-        </div>
-  
-        <div class="form-group">
-          <label for="password">Mot de passe</label>
+  <div class="login-background">
+    <div class="flex justify-center items-center min-h-screen">
+      <div class="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
+        <h1 class="text-2xl font-semibold mb-6 text-center">Connexion</h1>
+        <form @submit.prevent="submitForm" class="space-y-4">
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700">Adresse e-mail</label>
+            <input
+              type="email"
+              id="email"
+              v-model="AdresseMailUser"
+              required
+              placeholder="Entrez votre adresse e-mail"
+              class="w-full mt-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">Mot de passe</label>
+            <input
+              type="password"
+              id="password"
+              v-model="MdpUser"
+              required
+              placeholder="Entrez votre mot de passe"
+              class="w-full mt-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Se connecter
+          </button>
+
+          <p v-if="errorMessage" class="text-red-500 text-sm mt-4 text-center">{{ errorMessage }}</p>
+
+          <button
+            type="button"
+            @click="openModal"
+            class="w-full bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors mt-4"
+          >
+            Modifier le mot de passe
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal pour modifier le mot de passe -->
+    <div
+      v-if="isModalOpen"
+      class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+    >
+      <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+        <h2 class="text-xl font-semibold mb-4">Modifier le mot de passe</h2>
+        <div class="mb-4">
+          <label for="admin-password" class="block text-sm font-medium text-gray-700"
+            >Mot de passe administrateur</label
+          >
           <input
             type="password"
-            id="password"
-            v-model="password"
+            id="admin-password"
+            v-model="adminPassword"
             required
-            placeholder="Entrez votre mot de passe"
+            class="w-full border rounded-md p-2"
           />
         </div>
-  
-        <button type="submit" class="btn">Se connecter</button>
-  
-        <p class="register">
-          Pas encore de compte ?
-          <router-link to="/register">Inscrivez-vous ici</router-link>
-        </p>
-  
-        <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-      </form>
+        <div class="mb-4">
+          <label for="new-password" class="block text-sm font-medium text-gray-700"
+            >Nouveau mot de passe</label
+          >
+          <input
+            type="password"
+            id="new-password"
+            v-model="newPassword"
+            required
+            class="w-full border rounded-md p-2"
+          />
+        </div>
+        <div class="mb-4">
+          <label for="confirm-password" class="block text-sm font-medium text-gray-700"
+            >Confirmer le mot de passe</label
+          >
+          <input
+            type="password"
+            id="confirm-password"
+            v-model="confirmPassword"
+            required
+            class="w-full border rounded-md p-2"
+          />
+        </div>
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            @click="closeModal"
+            class="bg-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400"
+          >
+            Annuler
+          </button>
+          <button
+            @click="updatePassword"
+            class="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"
+          >
+            Sauvegarder
+          </button>
+        </div>
+      </div>
     </div>
-  </template>
-  
-  <script>
-  export default {
-    name: 'LoginView',
-    data() {
-      return {
-        email: '',
-        password: '',
-        errorMessage: null, // Pour afficher un message d'erreur si besoin
-      };
-    },
-    methods: {
-      async submitForm() {
-        try {
-          // Utilisation de fetch pour envoyer une requête POST au serveur
-          const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: this.email,
-              password: this.password,
-            }),
-          });
-          const data = await response.json();
-  
-          if (response.ok) {
-            // Si la connexion est réussie, on récupère les données de la réponse
-            console.log('Réponse du serveur :', data);
-            alert('Connexion réussie !');
-            localStorage.setItem('token', data.IdUser);
-            const token = localStorage.getItem('token');
-            console.log('Token récupéré :', token);
+  </div>
+</template>
 
-            // Redirection vers une autre page après une connexion réussie
-            this.$router.push('/tache');
-          } else {
-            // Si le serveur retourne une erreur (comme une authentification échouée)
-            const errorData = await response.json();
-            this.errorMessage = errorData.message || 'Erreur lors de la connexion';
-          }
-        } catch (error) {
-          // En cas d'erreur réseau ou autre
-          console.error('Erreur de connexion :', error);
-          this.errorMessage = 'Erreur lors de la communication avec le serveur';
-        }
-      }
-    }
-  };
-  </script>
-  
-  <style scoped>
-  .login {
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    text-align: center;
-  }
-  
-  .login h1 {
-    margin-bottom: 20px;
-    font-size: 2rem;
-    color: #333;
-  }
-  
-  .form-group {
-    margin-bottom: 15px;
-  }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-  }
-  
-  .form-group input {
-    width: 100%;
-    padding: 10px;
-    font-size: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box;
-  }
-  
-  .btn {
-    background-color: #3498db;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    font-size: 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    width: 100%;
-  }
-  
-  .btn:hover {
-    background-color: #2980b9;
-  }
-  
-  .register {
-    margin-top: 20px;
-    font-size: 0.9rem;
-  }
-  
-  .register a {
-    color: #3498db;
-    text-decoration: none;
-  }
-  
-  .register a:hover {
-    text-decoration: underline;
-  }
-  </style>
-  
+<style scoped>
+.login-background {
+  background-image: url('@/assets/Designer.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* .flex {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+} */
+
+.max-w-md {
+  max-width: 500px;
+}
+</style>

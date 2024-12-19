@@ -1,16 +1,16 @@
+<script setup lang="ts">
+import NavComponent from '@/components/NavComponent.vue';
+
+</script>
+
 <template>
+    <NavComponent />
     <div class="about">
       <h1>À propos de nous</h1>
       <p>Nous sommes une équipe passionnée qui développe des solutions innovantes.</p>
-      <router-link to="/">Retour à l'accueil</router-link>
+      <router-link to="/home">Retour à l'accueil</router-link>
     </div>
   </template>
-  
-  <script>
-  export default {
-    name: 'AboutView',
-  };
-  </script>
   
   <style scoped>
   .about {
