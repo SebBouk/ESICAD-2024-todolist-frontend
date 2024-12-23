@@ -23,7 +23,13 @@ const columns = ref<Column[]>([
   { label: 'Echeance', key: 'EcheanceTache', isDate: true },
   { label: 'Creation', key: 'datecreaTache', isDate: true },
   { label: 'Mise a jour', key: 'datemajTache', isDate: true },
-  { label: 'Etat', key: 'EtatTache', isBoolean: true, activeLabel:'Terminé', inactiveLabel:'En cours'}
+  {
+    label: 'Etat',
+    key: 'EtatTache',
+    isBoolean: true,
+    activeLabel: 'Terminé',
+    inactiveLabel: 'En cours'
+  }
 ]);
 
 const tableRef = ref<InstanceType<typeof DynamicTable> | null>(null);
@@ -56,44 +62,6 @@ const fetchTaches = async () => {
   }
 };
 
-const saveData = async () => {
-  if (!tableRef.value) {
-    console.error('Référence au tableau introuvable !');
-    return;
-  }
-
-  const updatedRows = tableRef.value.getExposedRows();
-  console.log('Rows après préparation:', updatedRows);
-  loading.value = true;
-  errorMessage.value = null;
-
-  try {
-    const response = await fetch('/api/admin/tache/save', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(updatedRows)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Erreur lors de la sauvegarde des données');
-    }
-
-    toast.success('Données sauvegardées avec succès !');
-    await fetchTaches(); // Refresh data after successful save
-  } catch (error) {
-    console.error('Erreur :', error);
-    errorMessage.value =
-      error instanceof Error ? error.message : 'Échec de la sauvegarde des données.';
-  } finally {
-    loading.value = false;
-  }
-  console.log('Contenu du tableRef:', tableRef.value);
-  console.log('Méthodes disponibles:', Object.keys(tableRef.value || {}));
-};
-
 const addTaches = async (formData: any) => {
   try {
     console.log('Données du formulaire :', formData);
@@ -102,7 +70,7 @@ const addTaches = async (formData: any) => {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(formData) 
+      body: JSON.stringify(formData)
     });
 
     if (!response.ok) {
@@ -143,28 +111,30 @@ const deleteTache = async (IdTache: number) => {
       error instanceof Error ? error.message : 'Impossible de supprimer la tache.';
   }
 };
-const handleRowSave = async (row: any, index: number) => {
+const handleRowSave = async (row: any ) => {
   loading.value = true;
   errorMessage.value = null;
 
   try {
-    const response = await fetch(`/api/taches/${row.IdTache}`, {
-      method: 'PUT',
+    const response = await fetch('/api/admin/tache/save', {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(row)
+      body: JSON.stringify([row]) // Envoyer la ligne dans un tableau comme attendu par votre API
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Erreur lors de la sauvegarde de la ligne');
+      throw new Error(errorData.error || 'Erreur lors de la sauvegarde de la ligne');
     }
 
-    toast.success('Ligne sauvegardée avec succès !');
+    toast.success('Tâche mise à jour avec succès !');
+    await fetchTaches(); // Rafraîchir toutes les données après la sauvegarde
   } catch (error) {
     console.error('Erreur :', error);
-    errorMessage.value = error instanceof Error ? error.message : 'Échec de la sauvegarde de la ligne.';
+    errorMessage.value =
+      error instanceof Error ? error.message : 'Échec de la sauvegarde de la tâche.';
     toast.error(errorMessage.value);
   } finally {
     loading.value = false;
@@ -208,46 +178,43 @@ const tacheFields: FormField[] = [
 ];
 </script>
 
-  <template>
-    <NavComponent />
-    <div class="user-management-container">
-      <div class="user-management-content">
-        <h1>Gestion des taches</h1>
-
-        <div v-if="loading" class="loading-message">Chargement...</div>
-        <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-
-        <div class="dynamic-table-wrapper" v-if="!loading && !errorMessage">
-          <DynamicTable
-            title="Liste des taches"
-            :columns="columns"
-            :initialData="tache"
-            ref="tableRef"
-            @update:rows="updateRows"
-            @delete-row="(index) => deleteTache(tache[index].IdTache)"
-            @save-row="handleRowSave"
-          />
-        </div>
-
-        <div class="action-buttons">
-          <button @click="saveData" class="BT" :disabled="loading">Sauvegarder</button>
-          <button v-if="!isModalOpen" @click="openModal" class="BT">Ajouter une Tache</button>
-        </div>
+<template>
+  <NavComponent />
+  <div class="user-management-container">
+    <div class="user-management-content">
+      <h1>Gestion des taches</h1>
+      <div class="action-buttons">
+        <button v-if="!isModalOpen" @click="openModal" class="BT">Ajouter une Tache</button>
       </div>
+      <div v-if="loading" class="loading-message">Chargement...</div>
+      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
-      <div v-if="isModalOpen" class="modal-overlay">
-        <div class="modal-content">
-          <h1>Ajouter une nouvelle tache</h1>
-          <DynamicForm
-            :fields="tacheFields"
-            submit-label="Enregistrer la tache"
-            @submit="addTaches"
-            @cancel="closeModal"
-          />
-        </div>
+      <div class="dynamic-table-wrapper" v-if="!loading && !errorMessage">
+        <DynamicTable
+          title="Liste des taches"
+          :columns="columns"
+          :initialData="tache"
+          ref="tableRef"
+          @update:rows="updateRows"
+          @delete-row="(index) => deleteTache(tache[index].IdTache)"
+          @save-row="handleRowSave"
+        />
       </div>
     </div>
-  </template>
+
+    <div v-if="isModalOpen" class="modal-overlay">
+      <div class="modal-content">
+        <h1>Ajouter une nouvelle tache</h1>
+        <DynamicForm
+          :fields="tacheFields"
+          submit-label="Enregistrer la tache"
+          @submit="addTaches"
+          @cancel="closeModal"
+        />
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .user-management-container {
@@ -306,6 +273,7 @@ tbody td {
   justify-content: center;
   gap: 1rem;
   margin-top: 1rem;
+  margin-bottom: 1rem;
 }
 
 .BT {

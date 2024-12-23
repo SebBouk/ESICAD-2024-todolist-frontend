@@ -47,7 +47,7 @@ const fetchUsers = async () => {
   }
 };
 
-const saveData = async () => {
+const handleSaveRow = async () => {
   if (!tableRef.value) {
     console.error('Référence au tableau introuvable !');
     return;
@@ -85,7 +85,6 @@ const saveData = async () => {
   console.log('Méthodes disponibles:', Object.keys(tableRef.value || {}));
 };
 
-
 const addUser = async (formData: any) => {
   try {
     const response = await fetch('/api/admin/users/add', {
@@ -93,7 +92,7 @@ const addUser = async (formData: any) => {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(formData) 
+      body: JSON.stringify(formData)
     });
 
     if (!response.ok) {
@@ -107,7 +106,6 @@ const addUser = async (formData: any) => {
     toast.success('Utilisateur ajouté avec succès');
     closeModal();
     fetchUsers();
-
   } catch (error) {
     console.error('Erreur :', error);
     errorMessage.value =
@@ -190,11 +188,13 @@ const employeeFields: FormField[] = [
 </script>
 
 <template>
-  <NavComponent/>
+  <NavComponent />
   <div class="user-management-container">
     <div class="user-management-content">
       <h1>Gestion des utilisateurs</h1>
-
+      <div class="action-buttons">
+        <button v-if="!isModalOpen" @click="openModal" class="BT">Ajouter un Utilisateur</button>
+      </div>
       <div v-if="loading" class="loading-message">Chargement...</div>
       <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
@@ -206,12 +206,8 @@ const employeeFields: FormField[] = [
           ref="tableRef"
           @update:rows="updateRows"
           @delete-row="(index) => deleteUser(users[index].IdUser)"
+          @save-row="handleSaveRow"
         />
-      </div>
-
-      <div class="action-buttons">
-        <button @click="saveData" class="BT" :disabled="loading">Sauvegarder</button>
-        <button v-if="!isModalOpen" @click="openModal" class="BT">Ajouter un Utilisateur</button>
       </div>
     </div>
 
@@ -287,6 +283,7 @@ tbody td {
   justify-content: center;
   gap: 1rem;
   margin-top: 1rem;
+  margin-bottom: 1rem;
 }
 
 .BT {
