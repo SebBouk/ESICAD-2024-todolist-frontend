@@ -57,6 +57,17 @@ const rows = ref<Row[]>(
   })
 );
 
+const formatDate = (dateString: string): string => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
+};
+
+
 const enableEditing = (index: number) => {
   // Create a backup of the current row data
   const rowBackup = { ...rows.value[index] };
@@ -215,7 +226,7 @@ defineExpose({
                     }}
                   </span>
                   <span v-else-if="column.isDate">
-                    {{ row[column.key] }}
+                    {{ formatDate(row[column.key]) }}
                   </span>
                   <span v-else>
                     <!-- Apply formatter if it exists -->

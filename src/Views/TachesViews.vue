@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Taches } from '@/models/Taches';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import DynamicForm, { FormField } from '../components/DynamicForm.vue';
 import DynamicTable from '../components/DynamicTable.vue';
 import { useToast } from 'vue-toastification';
@@ -40,6 +40,7 @@ const fetchListes = async () => {
     }
     const data = await response.json();
     listes.value = data;
+    updateColumnsWithListOptions();
   } catch (error) {
     console.error('Erreur lors de la récupération des catégories:', error);
     errorMessage.value = 'Impossible de charger les catégories.';
@@ -184,8 +185,38 @@ const columns = ref<Column[]>([
    }
 ]);
 
+const updateColumnsWithListOptions = () => {
+  columns.value = [
+    { label: 'ID', key: 'IdTache' },
+    { label: 'Nom', key: 'NomTache' },
+    { label: 'Echeance', key: 'EcheanceTache', isDate: true },
+    { label: 'Creation', key: 'datecreaTache', isDate: true },
+    { label: 'Mise a jour', key: 'datemajTache', isDate: true },
+    {
+      label: 'Etat',
+      key: 'EtatTache',
+      isBoolean: true,
+      activeLabel: 'Terminé',
+      inactiveLabel: 'En cours',
+    },
+    {
+      label: 'Liste',
+      key: 'IdListe',
+      formatter: (row) => {
+        const list = listes.value.find((cat) => cat.IdListe === row.IdListe);
+        return list ? list.NomListe : 'Non défini';
+      },
+      options: listes.value.map((cat) => ({
+        value: cat.IdListe,
+        label: cat.NomListe,
+      })),
+    },
+  ];
+};
 
-const tacheFields: FormField[] = [
+
+
+const tacheFields = computed((): FormField[] => [
   {
     type: 'text',
     name: 'NomTache',
@@ -204,8 +235,18 @@ const tacheFields: FormField[] = [
     label: 'N°',
     required: false,
     placeholder: 'Attribué automatiquement'
+  },
+  {
+    type: 'select',
+    name: 'IdListe',
+    label: 'Liste',
+    required: true,
+    options: listes.value.map((cat) => ({
+      value: cat.IdListe,
+      label: cat.NomListe
+    }))
   }
-];
+]);
 </script>
 
 <template>

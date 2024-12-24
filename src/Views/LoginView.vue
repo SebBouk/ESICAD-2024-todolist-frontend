@@ -39,12 +39,12 @@ const submitForm = async () => {
     if (response.ok) {
       toast.success('Connexion réussie !');
       document.cookie = `token=${data.token};path=/; max-age=${60 * 60}; secure;`;
-      if (data.AdminUser === 0) {
+      if (data.AdminUser === 0 && data.ActifUser === 1) {
         router.push(`/home`);
-      } else if (data.AdminUser === 1) {
+      } else if (data.AdminUser === 1 && data.ActifUser === 1) {
         router.push('/home');
       } else {
-        errorMessage.value = 'Rôle inconnu, redirection impossible.';
+        errorMessage.value = 'Rôle inconnu ou compte inactif, redirection impossible, contacter votre responsable informatique.';
       }
     } else {
       errorMessage.value = data.message || 'Erreur lors de la connexion';

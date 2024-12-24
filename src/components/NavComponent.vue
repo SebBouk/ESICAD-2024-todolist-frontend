@@ -22,7 +22,9 @@ const username = computed(() => {
   if (token) {
     try {
       const user = JSON.parse(atob(token.split('.')[1]));
-      return user.NomUser || 'Utilisateur';
+      const nom = user.NomUser || '';
+      const prenom = user.PrenomUser || ''; // Assurez-vous que le champ correspondant existe dans le token
+      return `${prenom} ${nom}`.trim() || 'Utilisateur';
     } catch (e) {
       console.error('Erreur de décodage du token', e);
       return 'Utilisateur';
