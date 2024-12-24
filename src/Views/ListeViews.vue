@@ -14,20 +14,11 @@ interface Column {
   key: string;
   isBoolean?: boolean;
   isDate?: boolean;
+  options?: { value: string | number; label: string }[];
   activeLabel?: string;
   inactiveLabel?: string;
+  formatter?: (row: any) => string;
 }
-
-const columns = ref<Column[]>([
-  { label: 'ID', key: 'IdListe' },
-  { label: 'Nom', key: 'NomListe' },
-  { label: 'Creation', key: 'datecreaListe', isDate: true },
-  { label: 'Mise a jour', key: 'dateMajListe', isDate: true },
-  { label: 'Archivé', key: 'dateArchivage', isDate: true },
-  { label: 'Etat', key: 'listeArchive', isBoolean: true, activeLabel:'Archivé', inactiveLabel:'En cours'},
-  { label: 'Categorie', key: 'NomCategorie'}
-]);
-
 const tableRef = ref<InstanceType<typeof DynamicTable> | null>(null);
 const liste = ref<Listes[]>([]);
 const categories = ref<Categories[]>([]);
@@ -35,9 +26,11 @@ const loading = ref(false);
 const errorMessage = ref<string | null>(null);
 
 
+
 onMounted(async () => {
   await Promise.all([fetchListes(), fetchCategories()]);
   console.log('Listes après fetchListes:', liste.value);
+  updateCategoryOptions();
 });
 
 const fetchListes = async () => {
@@ -50,7 +43,13 @@ const fetchListes = async () => {
       console.error('Fetch failed:', await response.text());
       throw new Error('Erreur lors de la récupération des données');
     }
-    liste.value = await response.json();
+    const data = await response.json();
+    liste.value = data.map((item: any) => ({
+      ...item,
+      NomCategorie: categories.value.find(
+        (cat) => cat.IdCategorie === item.IdCategorie
+      )?.NomCategorie || '',
+    }));
     console.log('Listes récupérées:', liste.value);
   } catch (error) {
     console.error('Erreur :', error);
@@ -68,7 +67,7 @@ const addListe = async (formData: any) => {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(formData) 
+      body: JSON.stringify(formData)
     });
 
     if (!response.ok) {
@@ -96,7 +95,7 @@ const deleteListe = async (IdListe: number) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || "Erreur lors de la suppression de la liste");
+      throw new Error(errorData.error || 'Erreur lors de la suppression de la liste');
     }
 
     // Remove the user from the local list
@@ -109,11 +108,15 @@ const deleteListe = async (IdListe: number) => {
       error instanceof Error ? error.message : 'Impossible de supprimer la liste.';
   }
 };
-const handleRowSave = async (row: any) => {
+const handleRowSave = async (row: any, originalRow: any) => {
   loading.value = true;
   errorMessage.value = null;
 
   try {
+    if (row.listeArchive && row.listeArchive !== originalRow.listeArchive) {
+      // Si la liste est archivée, définissez la date d'archivage
+      row.dateArchivage = new Date().toISOString(); // Date actuelle au format ISO
+    }
     const response = await fetch(`/api/admin/listes/save`, {
       method: 'POST',
       headers: {
@@ -128,10 +131,11 @@ const handleRowSave = async (row: any) => {
     }
 
     toast.success('Ligne sauvegardée avec succès !');
-    await fetchListes(); 
+    await fetchListes();
   } catch (error) {
     console.error('Erreur :', error);
-    errorMessage.value = error instanceof Error ? error.message : 'Échec de la sauvegarde de la ligne.';
+    errorMessage.value =
+      error instanceof Error ? error.message : 'Échec de la sauvegarde de la ligne.';
     toast.error(errorMessage.value);
   } finally {
     loading.value = false;
@@ -146,9 +150,20 @@ const fetchCategories = async () => {
     }
     const data = await response.json();
     categories.value = data;
+    updateCategoryOptions();
   } catch (error) {
     console.error('Erreur lors de la récupération des catégories:', error);
-    errorMessage.value = "Impossible de charger les catégories.";
+    errorMessage.value = 'Impossible de charger les catégories.';
+  }
+};
+
+const updateCategoryOptions = () => {
+  const categoryColumn = columns.value.find(column => column.key === 'IdCategorie');
+  if (categoryColumn) {
+    categoryColumn.options = categories.value.map(cat => ({
+      value: cat.IdCategorie,
+      label: cat.NomCategorie
+    }));
   }
 };
 
@@ -166,6 +181,33 @@ async function openModal() {
 function closeModal() {
   isModalOpen.value = false;
 }
+
+const columns = ref<Column[]>([
+  { label: 'ID', key: 'IdListe' },
+  { label: 'Nom', key: 'NomListe' },
+  { label: 'Creation', key: 'datecreaListe', isDate: true },
+  { label: 'Mise a jour', key: 'dateMajListe', isDate: true },
+  { label: 'Archivé', key: 'dateArchivage', isDate: true },
+  {
+    label: 'Etat',
+    key: 'listeArchive',
+    isBoolean: true,
+    activeLabel: 'Archivé',
+    inactiveLabel: 'En cours'
+  },
+  {
+    label: 'Categorie',
+    key: 'IdCategorie',
+    formatter: (row) => {
+      const category = categories.value.find((cat) => cat.IdCategorie === row.IdCategorie);
+      return category ? category.NomCategorie : 'Non défini';
+    },
+    options: categories.value.map((cat) => ({
+      value: cat.IdCategorie,
+      label: cat.NomCategorie
+    })), 
+  }
+]);
 
 const listeFields = computed((): FormField[] => [
   {
@@ -189,9 +231,9 @@ const listeFields = computed((): FormField[] => [
   {
     type: 'select',
     name: 'IdCategorie',
-    label:'Categorie',
+    label: 'Categorie',
     required: true,
-    options: categories.value.map(cat => ({
+    options: categories.value.map((cat) => ({
       value: cat.IdCategorie,
       label: cat.NomCategorie
     }))
@@ -199,45 +241,43 @@ const listeFields = computed((): FormField[] => [
 ]);
 </script>
 
-  <template>
-    <NavComponent />
-    <div class="user-management-container">
-      <div class="user-management-content">
-        <h1>Gestion des listes</h1>
-        <div class="action-buttons">
-          <button v-if="!isModalOpen" @click="openModal" class="BT">Ajouter une liste</button>
-        </div>
-        <div v-if="loading" class="loading-message">Chargement...</div>
-        <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-
-        <div class="dynamic-table-wrapper" v-if="!loading && !errorMessage">
-          <DynamicTable
-            title="Liste des listes"
-            :columns="columns"
-            :initialData="liste"
-            ref="tableRef"
-            @update:rows="updateRows"
-            @delete-row="(index) => deleteListe(liste[index].IdListe)"
-            @save-row="handleRowSave"
-          />
-        </div>
-
-
+<template>
+  <NavComponent />
+  <div class="user-management-container">
+    <div class="user-management-content">
+      <h1>Gestion des listes</h1>
+      <div class="action-buttons">
+        <button v-if="!isModalOpen" @click="openModal" class="BT">Ajouter une liste</button>
       </div>
+      <div v-if="loading" class="loading-message">Chargement...</div>
+      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
-      <div v-if="isModalOpen" class="modal-overlay">
-        <div class="modal-content">
-          <h1>Ajouter une nouvelle liste</h1>
-          <DynamicForm
-            :fields="listeFields"
-            submit-label="Enregistrer la liste"
-            @submit="addListe"
-            @cancel="closeModal"
-          />
-        </div>
+      <div class="dynamic-table-wrapper" v-if="!loading && !errorMessage">
+        <DynamicTable
+          title="Liste des listes"
+          :columns="columns"
+          :initialData="liste"
+          ref="tableRef"
+          @update:rows="updateRows"
+          @delete-row="(index) => deleteListe(liste[index].IdListe)"
+          @save-row="(row, originalRow) => handleRowSave(row, originalRow)"
+        />
       </div>
     </div>
-  </template>
+
+    <div v-if="isModalOpen" class="modal-overlay">
+      <div class="modal-content">
+        <h1>Ajouter une nouvelle liste</h1>
+        <DynamicForm
+          :fields="listeFields"
+          submit-label="Enregistrer la liste"
+          @submit="addListe"
+          @cancel="closeModal"
+        />
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 /* Global Container Styles */

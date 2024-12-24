@@ -7,8 +7,10 @@ interface Column {
   key: string;
   isBoolean?: boolean;
   isDate?: boolean;
+  options?: { value: string | number; label: string }[];
   activeLabel?: string;
   inactiveLabel?: string;
+  formatter?: (row: any) => string;
 }
 
 interface Row {
@@ -122,14 +124,16 @@ defineExpose({
     autoResize: autoResizeDirective
   },
   rows: rows.value,
-  getExposedRows,
+  getExposedRows
 });
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-100 p-4">
     <div class="mx-auto max-w-7xl bg-white rounded-xl shadow-lg p-6 md:p-8">
-      <h1 class="text-2xl md:text-3xl text-center text-gray-800 font-bold mb-8 pb-2 border-b-3 border-blue-500">
+      <h1
+        class="text-2xl md:text-3xl text-center text-gray-800 font-bold mb-8 pb-2 border-b-3 border-blue-500"
+      >
         {{ title }}
       </h1>
 
@@ -137,8 +141,11 @@ defineExpose({
         <table class="w-full min-w-full divide-y divide-gray-200">
           <thead class="bg-blue-500">
             <tr>
-              <th v-for="(column, index) in columns" :key="index"
-                class="px-4 py-3 text-left text-sm font-semibold text-white">
+              <th
+                v-for="(column, index) in columns"
+                :key="index"
+                class="px-4 py-3 text-left text-sm font-semibold text-white"
+              >
                 {{ column.label }}
               </th>
               <th class="px-4 py-3 text-left text-sm font-semibold text-white">Actions</th>
@@ -146,61 +153,103 @@ defineExpose({
           </thead>
 
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="(row, rowIndex) in rows" :key="rowIndex"
-              class="hover:bg-gray-50 transition-colors duration-200">
+            <tr
+              v-for="(row, rowIndex) in rows"
+              :key="rowIndex"
+              class="hover:bg-gray-50 transition-colors duration-200"
+            >
               <td v-for="(column, colIndex) in columns" :key="colIndex" class="px-4 py-3">
                 <div v-if="row.isEditing">
                   <div v-if="column.isDate">
-                    <input type="date" v-model="row[column.key]"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200" />
+                    <input
+                      type="date"
+                      v-model="row[column.key]"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                    />
                   </div>
                   <div v-else-if="column.isBoolean">
-                    <button @click="toggleValue(row, column.key)"
+                    <button
+                      @click="toggleValue(row, column.key)"
                       :class="[
                         'px-4 py-2 rounded-md font-semibold transition-colors duration-200',
                         row[column.key]
                           ? 'bg-green-500 hover:bg-green-600 text-white'
                           : 'bg-red-500 hover:bg-red-600 text-white'
-                      ]">
-                      {{ row[column.key] ? column.activeLabel || 'Actif' : column.inactiveLabel || 'Inactif' }}
+                      ]"
+                    >
+                      {{
+                        row[column.key]
+                          ? column.activeLabel || 'Actif'
+                          : column.inactiveLabel || 'Inactif'
+                      }}
                     </button>
                   </div>
+                  <div v-else-if="column.options">
+                    <select
+                      v-model="row[column.key]"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                    >
+                      <option
+                        v-for="option in column.options"
+                        :key="option.value"
+                        :value="option.value"
+                      >
+                        {{ option.label }}
+                      </option>
+                    </select>
+                  </div>
                   <div v-else>
-                    <input v-model="row[column.key]" :type="column.key === 'someNumericKey' ? 'number' : 'text'"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200" />
+                    <input
+                      v-model="row[column.key]"
+                      :type="column.key === 'someNumericKey' ? 'number' : 'text'"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                    />
                   </div>
                 </div>
                 <div v-else>
                   <span v-if="column.isBoolean">
-                    {{ row[column.key] ? column.activeLabel || 'Actif' : column.inactiveLabel || 'Inactif' }}
+                    {{
+                      row[column.key]
+                        ? column.activeLabel || 'Actif'
+                        : column.inactiveLabel || 'Inactif'
+                    }}
                   </span>
                   <span v-else-if="column.isDate">
                     {{ row[column.key] }}
                   </span>
                   <span v-else>
-                    {{ row[column.key] }}
+                    <!-- Apply formatter if it exists -->
+                    {{ column.formatter ? column.formatter(row) : row[column.key] }}
                   </span>
                 </div>
               </td>
               <td class="px-4 py-3">
                 <div class="flex space-x-2">
                   <div v-if="row.isEditing">
-                    <button @click="saveRow(rowIndex)"
-                      class="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-200 mr-2">
+                    <button
+                      @click="saveRow(rowIndex)"
+                      class="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-200 mr-2"
+                    >
                       Sauvegarder
                     </button>
-                    <button @click="cancelEditing(rowIndex)"
-                      class="px-3 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors duration-200">
+                    <button
+                      @click="cancelEditing(rowIndex)"
+                      class="px-3 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors duration-200"
+                    >
                       Annuler
                     </button>
                   </div>
                   <div v-else>
-                    <button @click="enableEditing(rowIndex)"
-                      class="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-200 mr-2">
+                    <button
+                      @click="enableEditing(rowIndex)"
+                      class="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-200 mr-2"
+                    >
                       Modifier
                     </button>
-                    <button @click="deleteRow(rowIndex)"
-                      class="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200">
+                    <button
+                      @click="deleteRow(rowIndex)"
+                      class="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200"
+                    >
                       Supprimer
                     </button>
                   </div>

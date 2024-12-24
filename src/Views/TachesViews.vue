@@ -5,6 +5,7 @@ import DynamicForm, { FormField } from '../components/DynamicForm.vue';
 import DynamicTable from '../components/DynamicTable.vue';
 import { useToast } from 'vue-toastification';
 import NavComponent from '@/components/NavComponent.vue';
+import { Listes } from '@/models/Listes';
 
 const toast = useToast();
 
@@ -13,35 +14,37 @@ interface Column {
   key: string;
   isBoolean?: boolean;
   isDate?: boolean;
+  options?: { value: string | number; label: string }[];
   activeLabel?: string;
   inactiveLabel?: string;
+  formatter?: (row: any) => string;
 }
-
-const columns = ref<Column[]>([
-  { label: 'ID', key: 'IdTache' },
-  { label: 'Nom', key: 'NomTache' },
-  { label: 'Echeance', key: 'EcheanceTache', isDate: true },
-  { label: 'Creation', key: 'datecreaTache', isDate: true },
-  { label: 'Mise a jour', key: 'datemajTache', isDate: true },
-  {
-    label: 'Etat',
-    key: 'EtatTache',
-    isBoolean: true,
-    activeLabel: 'Terminé',
-    inactiveLabel: 'En cours'
-  }
-]);
 
 const tableRef = ref<InstanceType<typeof DynamicTable> | null>(null);
 const tache = ref<Taches[]>([]);
+const listes = ref<Listes[]>([]);
 const loading = ref(false);
 const errorMessage = ref<string | null>(null);
 
 onMounted(async () => {
-  await fetchTaches();
+  await fetchTaches(),
+  await fetchListes();
   console.log('Taches après fetchTaches:', tache.value);
 });
 
+const fetchListes = async () => {
+  try {
+    const response = await fetch('/api/admin/listes/get');
+    if (!response.ok) {
+      throw new Error('Erreur lors de la récupération des catégories');
+    }
+    const data = await response.json();
+    listes.value = data;
+  } catch (error) {
+    console.error('Erreur lors de la récupération des catégories:', error);
+    errorMessage.value = 'Impossible de charger les catégories.';
+  }
+};
 const fetchTaches = async () => {
   loading.value = true;
   errorMessage.value = null;
@@ -111,7 +114,7 @@ const deleteTache = async (IdTache: number) => {
       error instanceof Error ? error.message : 'Impossible de supprimer la tache.';
   }
 };
-const handleRowSave = async (row: any ) => {
+const handleRowSave = async (row: any) => {
   loading.value = true;
   errorMessage.value = null;
 
@@ -155,6 +158,33 @@ function closeModal() {
   isModalOpen.value = false;
 }
 
+const columns = ref<Column[]>([
+  { label: 'ID', key: 'IdTache' },
+  { label: 'Nom', key: 'NomTache' },
+  { label: 'Echeance', key: 'EcheanceTache', isDate: true },
+  { label: 'Creation', key: 'datecreaTache', isDate: true },
+  { label: 'Mise a jour', key: 'datemajTache', isDate: true },
+  {
+    label: 'Etat',
+    key: 'EtatTache',
+    isBoolean: true,
+    activeLabel: 'Terminé',
+    inactiveLabel: 'En cours'
+  },
+  { label: 'Liste',
+    key: 'IdListe',
+    formatter: (row) => {
+      const list = listes.value.find((cat) => cat.IdListe === row.IdListe);
+      return list ? list.NomListe : 'Non défini';
+    },
+    options: listes.value.map((cat) => ({
+      value: cat.IdListe,
+      label: cat.NomListe
+    })), 
+   }
+]);
+
+
 const tacheFields: FormField[] = [
   {
     type: 'text',
@@ -197,7 +227,7 @@ const tacheFields: FormField[] = [
           ref="tableRef"
           @update:rows="updateRows"
           @delete-row="(index) => deleteTache(tache[index].IdTache)"
-          @save-row="handleRowSave"
+          @save-row="(row) => handleRowSave(row)"
         />
       </div>
     </div>
