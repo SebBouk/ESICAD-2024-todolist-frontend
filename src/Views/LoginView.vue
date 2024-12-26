@@ -40,7 +40,7 @@ const submitForm = async () => {
       toast.success('Connexion réussie !');
       document.cookie = `token=${data.token};path=/; max-age=${60 * 60}; secure;`;
       if (data.AdminUser === 0 && data.ActifUser === 1) {
-        router.push(`/home`);
+        router.push(`/dashboard/${data.IdUser}`);
       } else if (data.AdminUser === 1 && data.ActifUser === 1) {
         router.push('/home');
       } else {

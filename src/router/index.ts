@@ -6,6 +6,7 @@ import ListeViews from '@/Views/ListeViews.vue';
 import CategorieViews from '@/Views/CategorieViews.vue';
 import LoginView from '../Views/LoginView.vue';
 import AboutView from '../Views/AboutView.vue';
+import DashboardView from '@/Views/DashboardView.vue';
 
 
 const router = createRouter({
@@ -45,6 +46,11 @@ const router = createRouter({
       path:'/categories',
       name:'categories',
       component:CategorieViews
+    },
+    {
+      path:`/dashboard/:IdUser`,
+      name:'dashboard',
+      component: DashboardView
     }
   ]
 });

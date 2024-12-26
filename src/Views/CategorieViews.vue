@@ -5,6 +5,8 @@ import DynamicForm, { FormField } from '../components/DynamicForm.vue';
 import DynamicTable from '../components/DynamicTable.vue';
 import { useToast } from 'vue-toastification';
 import NavComponent from '@/components/NavComponent.vue';
+import { Users } from '@/models/Users';
+import { Associer } from '@/models/Associer';
 
 const toast = useToast();
 
@@ -16,19 +18,41 @@ interface Column {
   activeLabel?: string;
   inactiveLabel?: string;
 }
-
-const columns = ref<Column[]>([
-  { label: 'ID', key: 'IdCategorie' },
-  { label: 'Nom', key: 'NomCategorie' },
- ]);
-
 const tableRef = ref<InstanceType<typeof DynamicTable> | null>(null);
 const categorie = ref<Categories[]>([]);
+const users = ref<Users[]>([]);
+const associations = ref<Associer[]>([]);
 const loading = ref(false);
 const errorMessage = ref<string | null>(null);
 
+const columns = ref<Column[]>([
+  { label: 'ID', key: 'IdCategorie' },
+  { label: 'Nom', key: 'NomCategorie', isClickable: true },
+  {
+    label: 'Utilisateur',
+    key: 'IdUser',
+    formatter: (row) => {
+      // const util = categorie.value.find((cat) => cat.IdUser === row.IdUser);
+      return row.NomUser ? row.NomUser : 'Non défini';
+    },
+    options: users.value.map((cat) => ({
+      value: cat.IdUser,
+      label: cat.NomUser
+    }))
+  }
+]);
+
+const associationColumns = ref<Column[]>([
+  { label: 'ID Categorie', key: 'IdCategorie' },
+  { label: 'ID User', key: 'IdUser' },
+  { label: 'Nom', key: 'NomCategorie' },
+  { label: 'Nom', key: 'NomUser' }
+]);
+
 onMounted(async () => {
   await fetchCategorie();
+  await fetchassociation();
+  await fetchUsers();
   console.log('Categories après fetchCategorie:', categorie.value);
 });
 
@@ -52,6 +76,51 @@ const fetchCategorie = async () => {
   }
 };
 
+const fetchassociation = async () => {
+  loading.value = true;
+  errorMessage.value = null;
+  try {
+    const response = await fetch('/api/admin/association/get');
+    console.log('Response status:', response.status);
+    if (!response.ok) {
+      console.error('Fetch failed:', await response.text());
+      throw new Error('Erreur lors de la récupération des données');
+    }
+    categorie.value = await response.json();
+    console.log('Categorie récupérées:', categorie.value);
+  } catch (error) {
+    console.error('Erreur :', error);
+    errorMessage.value = 'Impossible de charger les categories.';
+  } finally {
+    loading.value = false;
+  }
+};
+
+const fetchUsers = async () => {
+  loading.value = true;
+  errorMessage.value = null;
+  try {
+    const response = await fetch('/api/admin/users/get');
+    if (!response.ok) throw new Error('Erreur lors de la récupération des données');
+    users.value = await response.json();
+    updateUsersOptions();
+  } catch (error) {
+    console.error('Erreur :', error);
+    errorMessage.value = 'Impossible de charger les utilisateurs.';
+  } finally {
+    loading.value = false;
+  }
+};
+const updateUsersOptions = () => {
+  const UsersColumn = columns.value.find((column) => column.key === 'IdUser');
+  if (UsersColumn) {
+    UsersColumn.options = users.value.map((cat) => ({
+      value: cat.IdUser,
+      label: cat.NomUser
+    }));
+  }
+};
+
 const addCategorie = async (formData: any) => {
   try {
     console.log('Données du formulaire :', formData);
@@ -60,7 +129,7 @@ const addCategorie = async (formData: any) => {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(formData) 
+      body: JSON.stringify(formData)
     });
 
     if (!response.ok) {
@@ -73,10 +142,11 @@ const addCategorie = async (formData: any) => {
     categorie.value.push(addedCategorie);
     toast.success('Categorie ajouté avec succès');
     closeModal();
-    fetchCategorie();
+    onMounted();
   } catch (error) {
     console.error('Erreur :', error);
-    errorMessage.value = error instanceof Error ? error.message : "Impossible d'ajouter la categorie.";
+    errorMessage.value =
+      error instanceof Error ? error.message : "Impossible d'ajouter la categorie.";
   }
 };
 
@@ -88,7 +158,7 @@ const deleteCategorie = async (IdCategorie: number) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || "Erreur lors de la suppression de la categorie");
+      throw new Error(errorData.error || 'Erreur lors de la suppression de la categorie');
     }
 
     // Remove the user from the local list
@@ -118,15 +188,42 @@ const handleRowSave = async (row: any) => {
       const errorData = await response.json();
       throw new Error(errorData.message || 'Erreur lors de la sauvegarde de la ligne');
     }
-
     toast.success('Ligne sauvegardée avec succès !');
-    await fetchCategorie();
+    onMounted();
   } catch (error) {
     console.error('Erreur :', error);
-    errorMessage.value = error instanceof Error ? error.message : 'Échec de la sauvegarde de la ligne.';
+    errorMessage.value =
+      error instanceof Error ? error.message : 'Échec de la sauvegarde de la ligne.';
     toast.error(errorMessage.value);
   } finally {
     loading.value = false;
+  }
+};
+
+const isAssociationModalOpen = ref(false);
+const selectedCategorie = ref(null);
+
+const openAssociationModal = async (row) => {
+  selectedCategorie.value = row;
+  try {
+    const response = await fetch(`/api/admin/association/get/${row.IdCategorie}`);
+    if (!response.ok) throw new Error('Erreur lors de la récupération des associations');
+    associations.value = await response.json();
+    isAssociationModalOpen.value = true;
+  } catch (error) {
+    console.error('Erreur:', error);
+    toast.error('Erreur lors de la récupération des associations');
+  }
+};
+
+const closeAssociationModal = () => {
+  isAssociationModalOpen.value = false;
+  selectedCategorie.value = null;
+};
+
+const handleCellClick = ( row, column ) => {
+  if (column.key === 'NomCategorie') {
+    openAssociationModal(row);
   }
 };
 
@@ -161,45 +258,61 @@ const categorieFields: FormField[] = [
 ];
 </script>
 
-  <template>
-    <NavComponent />
-    <div class="user-management-container">
-      <div class="user-management-content">
-        <h1>Gestion des categories</h1>
-        <div class="action-buttons">
-          <button v-if="!isModalOpen" @click="openModal" class="BT">Ajouter une categorie</button>
-        </div>
-        <div v-if="loading" class="loading-message">Chargement...</div>
-        <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-
-        <div class="dynamic-table-wrapper" v-if="!loading && !errorMessage">
-          <DynamicTable
-            title="Liste des categories"
-            :columns="columns"
-            :initialData="categorie"
-            ref="tableRef"
-            @update:rows="updateRows"
-            @delete-row="(index) => deleteCategorie(categorie[index].IdCategorie)"
-            @save-row="handleRowSave"
-          />
-        </div>
-
-  
+<template>
+  <NavComponent />
+  <div class="user-management-container">
+    <div class="user-management-content">
+      <h1>Gestion des categories</h1>
+      <div class="action-buttons">
+        <button v-if="!isModalOpen" @click="openModal" class="BT">Ajouter une categorie</button>
       </div>
+      <div v-if="loading" class="loading-message">Chargement...</div>
+      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
-      <div v-if="isModalOpen" class="modal-overlay">
-        <div class="modal-content">
-          <h1>Ajouter une nouvelle categorie</h1>
-          <DynamicForm
-            :fields="categorieFields"
-            submit-label="Enregistrer la categorie"
-            @submit="addCategorie"
-            @cancel="closeModal"
-          />
-        </div>
+      <div class="dynamic-table-wrapper" v-if="!loading && !errorMessage">
+        <DynamicTable
+          title="Liste des categories"
+          :columns="columns"
+          :initialData="categorie"
+          ref="tableRef"
+          @update:rows="updateRows"
+          @delete-row="(index) => deleteCategorie(categorie[index].IdCategorie)"
+          @save-row="handleRowSave"
+          @cell-click="handleCellClick"
+        />
       </div>
     </div>
-  </template>
+    <div
+      v-if="isAssociationModalOpen"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+    >
+      <div class="bg-white p-6 rounded-lg max-w-2xl w-full mx-4">
+        <h2 class="text-xl font-bold mb-4 text-gray-800">
+          Associations pour {{ selectedCategorie?.NomCategorie }}
+        </h2>
+        <DynamicTable
+          title="Liste des utilisateurs associés"
+          :columns="associationColumns"
+          :initialData="associations"
+          ref="tableRef"
+        />
+        <button @click="closeAssociationModal" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors duration-200">Fermer</button>
+      </div>
+    </div>
+
+    <div v-if="isModalOpen" class="modal-overlay">
+      <div class="modal-content">
+        <h1>Ajouter une nouvelle categorie</h1>
+        <DynamicForm
+          :fields="categorieFields"
+          submit-label="Enregistrer la categorie"
+          @submit="addCategorie"
+          @cancel="closeModal"
+        />
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .user-management-container {

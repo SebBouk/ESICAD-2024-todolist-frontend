@@ -7,6 +7,7 @@ interface Column {
   key: string;
   isBoolean?: boolean;
   isDate?: boolean;
+  isClickable?: boolean;
   options?: { value: string | number; label: string }[];
   activeLabel?: string;
   inactiveLabel?: string;
@@ -22,6 +23,7 @@ const emit = defineEmits<{
   (event: 'update:rows', rows: Row[]): void;
   (event: 'delete-row', index: number): void;
   (event: 'save-row', row: Row, index: number): void;
+  (event: 'cell-click', row: Row, column: Column): void;
 }>();
 
 const props = defineProps({
@@ -63,10 +65,9 @@ const formatDate = (dateString: string): string => {
   return new Intl.DateTimeFormat('fr-FR', {
     day: '2-digit',
     month: '2-digit',
-    year: 'numeric',
+    year: 'numeric'
   }).format(date);
 };
-
 
 const enableEditing = (index: number) => {
   // Create a backup of the current row data
@@ -85,6 +86,11 @@ const cancelEditing = (index: number) => {
   }
 };
 
+const handleCellClick = (row: Row, column: Column) => {
+  if (column.isClickable) {
+    emit('cell-click', row, column);
+  }
+};
 const saveRow = (index: number) => {
   const row = rows.value[index];
   row.isEditing = false;
@@ -140,8 +146,8 @@ defineExpose({
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100 p-4">
-    <div class="mx-auto max-w-7xl bg-white rounded-xl shadow-lg p-6 md:p-8">
+  <div class="w-full">
+    <div class="w-full">
       <h1
         class="text-2xl md:text-3xl text-center text-gray-800 font-bold mb-8 pb-2 border-b-3 border-blue-500"
       >
@@ -169,7 +175,13 @@ defineExpose({
               :key="rowIndex"
               class="hover:bg-gray-50 transition-colors duration-200"
             >
-              <td v-for="(column, colIndex) in columns" :key="colIndex" class="px-4 py-3">
+              <td
+                v-for="(column, colIndex) in columns"
+                :key="colIndex"
+                class="px-4 py-3"
+                :class="{ 'cursor-pointer hover:text-blue-600': column.isClickable }"
+                @click="column.isClickable && handleCellClick(row, column)"
+              >
                 <div v-if="row.isEditing">
                   <div v-if="column.isDate">
                     <input
