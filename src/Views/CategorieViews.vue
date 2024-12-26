@@ -32,7 +32,6 @@ const columns = ref<Column[]>([
     label: 'Utilisateur',
     key: 'IdUser',
     formatter: (row) => {
-      // const util = categorie.value.find((cat) => cat.IdUser === row.IdUser);
       return row.NomUser ? row.NomUser : 'Non défini';
     },
     options: users.value.map((cat) => ({
