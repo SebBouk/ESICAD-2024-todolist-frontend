@@ -8,6 +8,7 @@ interface Column {
   isBoolean?: boolean;
   isDate?: boolean;
   isClickable?: boolean;
+  isEditable?: boolean;
   options?: { value: string | number; label: string }[];
   activeLabel?: string;
   inactiveLabel?: string;
@@ -248,7 +249,7 @@ defineExpose({
               </td>
               <td class="px-4 py-3">
                 <div class="flex space-x-2">
-                  <div v-if="row.isEditing">
+                  <div v-if="row.isEditing && columns.some(col => col.isEditable !== false)">
                     <button
                       @click="saveRow(rowIndex)"
                       class="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-200 mr-2"
@@ -263,7 +264,7 @@ defineExpose({
                     </button>
                   </div>
                   <div v-else>
-                    <button
+                    <button v-if="columns.some(col => col.isEditable !== false)"
                       @click="enableEditing(rowIndex)"
                       class="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-200 mr-2"
                     >

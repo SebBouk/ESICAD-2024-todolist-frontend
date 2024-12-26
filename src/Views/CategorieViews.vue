@@ -43,10 +43,10 @@ const columns = ref<Column[]>([
 ]);
 
 const associationColumns = ref<Column[]>([
-  { label: 'ID Categorie', key: 'IdCategorie' },
-  { label: 'ID User', key: 'IdUser' },
-  { label: 'Nom', key: 'NomCategorie' },
-  { label: 'Nom', key: 'NomUser' }
+  { label: 'ID Categorie', key: 'IdCategorie', isEditable: false },
+  { label: 'ID User', key: 'IdUser', isEditable: false },
+  { label: 'Nom Categorie', key: 'NomCategorie', isEditable: false },
+  { label: 'Nom User', key: 'NomUser', isEditable: false }
 ]);
 
 onMounted(async () => {
@@ -171,6 +171,30 @@ const deleteCategorie = async (IdCategorie: number) => {
       error instanceof Error ? error.message : 'Impossible de supprimer la categorie.';
   }
 };
+
+const deleteAssociation = async (IdCategorie: number, IdUser: number) => {
+  try {
+    const response = await fetch(`/api/admin/association/delete/${IdCategorie}/${IdUser}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erreur lors de la suppression de l\'association');
+    }
+
+    associations.value = associations.value.filter(
+      (assoc) => !(assoc.IdCategorie === IdCategorie && assoc.IdUser === IdUser)
+    );
+
+    toast.success('Association supprimé avec succès');
+  } catch (error) {
+    console.error('Erreur :', error);
+    errorMessage.value =
+      error instanceof Error ? error.message : "Impossible de supprimer l'association.";
+  }
+};
+
 const handleRowSave = async (row: any) => {
   loading.value = true;
   errorMessage.value = null;
@@ -201,7 +225,7 @@ const handleRowSave = async (row: any) => {
 };
 
 const isAssociationModalOpen = ref(false);
-const selectedCategorie = ref(null);
+const selectedCategorie = ref<Categories | null>(null);
 
 const openAssociationModal = async (row) => {
   selectedCategorie.value = row;
@@ -295,6 +319,7 @@ const categorieFields: FormField[] = [
           :columns="associationColumns"
           :initialData="associations"
           ref="tableRef"
+            @delete-row="(index) => deleteAssociation(selectedCategorie.IdCategorie, associations[index].IdUser)"
         />
         <button @click="closeAssociationModal" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors duration-200">Fermer</button>
       </div>
