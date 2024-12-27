@@ -9,6 +9,7 @@ interface Column {
   isDate?: boolean;
   isClickable?: boolean;
   isEditable?: boolean;
+  isDelete?: boolean;
   options?: { value: string | number; label: string }[];
   activeLabel?: string;
   inactiveLabel?: string;
@@ -166,7 +167,7 @@ defineExpose({
               >
                 {{ column.label }}
               </th>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-white">Actions</th>
+              <th v-if ="columns.some((col => col.isEditable !== false) && (col => col.isDelete !== false) )"  class="px-4 py-3 text-left text-sm font-semibold text-white">Actions</th>
             </tr>
           </thead>
 
@@ -270,7 +271,7 @@ defineExpose({
                     >
                       Modifier
                     </button>
-                    <button
+                    <button v-if="columns.some(col => col.isDelete !== false)"
                       @click="deleteRow(rowIndex)"
                       class="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200"
                     >

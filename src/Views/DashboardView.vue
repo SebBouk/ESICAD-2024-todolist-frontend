@@ -10,9 +10,10 @@ const loading = ref(false);
 const errorMessage = ref<string | null>(null);
 const route = useRoute();
 const tableRef = ref<InstanceType<typeof DynamicTable> | null>(null);
+ 
     
 const columns = ref<Column[]>([
-  { label: 'Nom', key: 'NomCategorie', isClickable: true }
+  { label: 'Nom', key: 'NomCategorie', isClickable: true, isEditable: false, isDelete:false }
 ]);
 
 
@@ -54,7 +55,7 @@ onMounted(async () => {
         <h1>Dashboard</h1>
         <p>Bienvenue sur le dashboard de l'application.</p>
     </div>
-
+<p>{{ categorie }}</p>
 
     <DynamicTable
         title="Liste des categories"
@@ -66,4 +67,7 @@ onMounted(async () => {
 
     <div v-if="loading" class="loading-message">Chargement...</div>
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+    <div v-if="!loading && !errorMessage && categorie.length === 0">
+      Aucune catégorie trouvée
+    </div>
 </template>
