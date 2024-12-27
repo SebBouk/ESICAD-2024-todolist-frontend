@@ -55,8 +55,8 @@ onMounted(async () => {
         <h1>Dashboard</h1>
         <p>Bienvenue sur le dashboard de l'application.</p>
     </div>
-<p>{{ categorie }}</p>
 
+<div v-if="!loading && !errorMessage && categorie.length > 0">
     <DynamicTable
         title="Liste des categories"
           :columns="columns"
@@ -64,7 +64,7 @@ onMounted(async () => {
           ref="tableRef"
           @cell-click="handleCellClick"
     />
-
+</div>
     <div v-if="loading" class="loading-message">Chargement...</div>
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
     <div v-if="!loading && !errorMessage && categorie.length === 0">
