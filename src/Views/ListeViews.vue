@@ -217,13 +217,6 @@ const listeFields = computed((): FormField[] => [
     required: true
   },
   {
-    type: 'text',
-    name: 'IdListe',
-    label: 'N°',
-    required: false,
-    placeholder: 'Attribué automatiquement'
-  },
-  {
     type: 'checkbox',
     name: 'listePerso',
     label: 'Liste personnel ?'

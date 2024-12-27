@@ -230,13 +230,6 @@ const tacheFields = computed((): FormField[] => [
     required: true
   },
   {
-    type: 'text',
-    name: 'IdTache',
-    label: 'N°',
-    required: false,
-    placeholder: 'Attribué automatiquement'
-  },
-  {
     type: 'select',
     name: 'IdListe',
     label: 'Liste',

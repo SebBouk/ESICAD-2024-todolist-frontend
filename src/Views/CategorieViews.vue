@@ -18,6 +18,7 @@ interface Column {
   activeLabel?: string;
   inactiveLabel?: string;
 }
+
 const tableRef = ref<InstanceType<typeof DynamicTable> | null>(null);
 const categorie = ref<Categories[]>([]);
 const users = ref<Users[]>([]);
@@ -270,13 +271,6 @@ const categorieFields: FormField[] = [
     name: 'NomCategorie',
     label: 'Nom',
     required: true
-  },
-  {
-    type: 'text',
-    name: 'IdCategorie',
-    label: 'N°',
-    required: false,
-    placeholder: 'Attribué automatiquement'
   }
 ];
 </script>
