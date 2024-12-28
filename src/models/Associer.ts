@@ -1,4 +1,4 @@
 export interface Associer{
-    idUser : number;
-    idCategorie : number;
+    IdUser : number;
+    IdCategorie : number;
   }

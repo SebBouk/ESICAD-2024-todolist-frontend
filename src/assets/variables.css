@@ -1,0 +1,19 @@
+:root {
+    --primary-color: #4a90e2;
+    --primary-hover: #357abd;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --background-color: #f8f9fa;
+    --border-color: #dee2e6;
+    --text-color: #343a40;
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --modal-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  }
+  
+  body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.6;
+  }

@@ -109,6 +109,12 @@ const toggleValue = (row: Row, key: string) => {
   row[key] = !row[key];
 };
 
+const canShowActions = (columns: Column[]) => {
+  return columns.some(col => 
+    (col.isEditable !== false) || (col.isDelete !== false)
+  );
+};
+
 watch(rows, (newRows) => {
   const formattedRows = newRows.map((row) => {
     const updatedRow: Row = { ...row };
@@ -167,7 +173,7 @@ defineExpose({
               >
                 {{ column.label }}
               </th>
-              <th v-if ="columns.some((col => col.isEditable !== false) && (col => col.isDelete !== false) )"  class="px-4 py-3 text-left text-sm font-semibold text-white">Actions</th>
+              <th v-if ="canShowActions(columns)" class="px-4 py-3 text-left text-sm font-semibold text-white">Actions</th>
             </tr>
           </thead>
 

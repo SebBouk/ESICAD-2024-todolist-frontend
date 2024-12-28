@@ -7,17 +7,10 @@ import { useToast } from 'vue-toastification';
 import NavComponent from '@/components/NavComponent.vue';
 import { Users } from '@/models/Users';
 import { Associer } from '@/models/Associer';
+import { Column } from '@/models/Column';
 
 const toast = useToast();
 
-interface Column {
-  label: string;
-  key: string;
-  isBoolean?: boolean;
-  isDate?: boolean;
-  activeLabel?: string;
-  inactiveLabel?: string;
-}
 
 const tableRef = ref<InstanceType<typeof DynamicTable> | null>(null);
 const categorie = ref<Categories[]>([]);
@@ -142,7 +135,6 @@ const addCategorie = async (formData: any) => {
     categorie.value.push(addedCategorie);
     toast.success('Categorie ajouté avec succès');
     closeModal();
-    onMounted();
   } catch (error) {
     console.error('Erreur :', error);
     errorMessage.value =
@@ -213,7 +205,6 @@ const handleRowSave = async (row: any) => {
       throw new Error(errorData.message || 'Erreur lors de la sauvegarde de la ligne');
     }
     toast.success('Ligne sauvegardée avec succès !');
-    onMounted();
   } catch (error) {
     console.error('Erreur :', error);
     errorMessage.value =
@@ -227,7 +218,7 @@ const handleRowSave = async (row: any) => {
 const isAssociationModalOpen = ref(false);
 const selectedCategorie = ref<Categories | null>(null);
 
-const openAssociationModal = async (row) => {
+const openAssociationModal = async (row : any) => {
   selectedCategorie.value = row;
   try {
     const response = await fetch(`/api/admin/association/get/${row.IdCategorie}`);
@@ -245,7 +236,7 @@ const closeAssociationModal = () => {
   selectedCategorie.value = null;
 };
 
-const handleCellClick = ( row, column ) => {
+const handleCellClick = ( row : any, column : any ) => {
   if (column.key === 'NomCategorie') {
     openAssociationModal(row);
   }
@@ -305,14 +296,14 @@ const categorieFields: FormField[] = [
     >
       <div class="bg-white p-6 rounded-lg max-w-2xl w-full mx-4">
         <h2 class="text-xl font-bold mb-4 text-gray-800">
-          Associations pour {{ selectedCategorie?.NomCategorie }}
+          Associations pour {{ selectedCategorie?.NomCategorie ?? 'Catégorie non sélectionnée' }}
         </h2>
         <DynamicTable
           title="Liste des utilisateurs associés"
           :columns="associationColumns"
           :initialData="associations"
           ref="tableRef"
-            @delete-row="(index) => deleteAssociation(selectedCategorie.IdCategorie, associations[index].IdUser)"
+            @delete-row="(index) => selectedCategorie?.IdCategorie && deleteAssociation(selectedCategorie.IdCategorie, associations[index].IdUser)"
         />
         <button @click="closeAssociationModal" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors duration-200">Fermer</button>
       </div>

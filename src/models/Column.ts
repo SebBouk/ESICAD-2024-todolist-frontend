@@ -5,6 +5,7 @@ export interface Column {
     isDate?: boolean;
     isClickable?: boolean;
     isEditable?: boolean;
+    isDelete?: boolean;
     options?: { value: string | number; label: string }[];
     activeLabel?: string;
     inactiveLabel?: string;
