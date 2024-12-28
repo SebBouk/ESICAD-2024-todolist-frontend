@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { Column } from '../models/Column';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { Categories } from '../models/Categories';
 import DynamicTable from '../components/DynamicTable.vue';
 import { Listes } from '@/models/Listes';
@@ -19,6 +19,7 @@ const tableRef = ref<InstanceType<typeof DynamicTable> | null>(null);
 const selectedCategorie = ref<Categories | null>(null);
 const selectedListe = ref<Listes | null>(null);
 const tache = ref<Taches[]>([]);
+  const router = useRouter();
     
 const columns = ref<Column[]>([
   { label: 'Nom', key: 'NomCategorie', isClickable: true, isEditable: false, isDelete:false }
@@ -40,6 +41,12 @@ const columnsTache = ref<Column[]>([
     inactiveLabel: 'En cours'
   },
 ]);
+
+const logout = () => {
+  document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+  
+  router.push('/');
+};
 
 
 const fetchCategorie = async () => {
@@ -269,7 +276,12 @@ onMounted(async () => {
     <div>
         <h1>Dashboard</h1>
         <p>Bienvenue sur le dashboard de l'application.
-          </p>
+          </p><button
+          @click="logout"
+          class="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 w-full md:w-auto"
+        >
+          Déconnexion
+        </button>
     </div>
 
 <div v-if="!loading && !errorMessage && categorie.length > 0">
@@ -308,7 +320,7 @@ onMounted(async () => {
         />
       </div>
       <div class="action-buttons">
-        <button v-if="!isModalOpen" @click="openModal" class="BT" :disabled="!selectedCategorie">Ajouter une Tache</button>
+        <button v-if="!isModalOpen" @click="openModal" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 w-full md:w-auto" :disabled="!selectedCategorie">Ajouter une Tache</button>
       </div>
       <div v-if="isModalOpen" class="modal-overlay">
       <div class="modal-content">
