@@ -279,6 +279,18 @@ function closeTache() {
 function closeListe() {
   selectedCategorie.value = null;
 }
+
+
+const tachesEnCours = computed(() => {
+  return tache.value.filter((t) => Number(t.EtatTache) === 0); // Filtre où EtatTache est "En cours" (false)
+});
+
+const tachesTerminée = computed(() => {
+  return tache.value.filter((t) => Number(t.EtatTache) === 1); // Filtre où EtatTache est "Terminées" (true)
+});
+
+const showCompletedTasks = ref(false);
+
 </script>
 
 <template>
@@ -340,14 +352,32 @@ function closeListe() {
       <div class="modal-overlay" v-if="!loading && !errorMessage && selectedListe">
         <div class="modal-content">
           <DynamicTable
-            title="Liste des taches"
+            title="Liste des taches en cours"
             :columns="columnsTache"
-            :initialData="tache"
+            :initialData="tachesEnCours"
             ref="tableRef"
             @update:rows="updateRows"
             @delete-row="(index) => deleteTache(tache[index].IdTache)"
             @save-row="(row) => handleRowSave(row)"
           />
+          <div>
+            <label>
+              <input type="checkbox" v-model="showCompletedTasks"/>
+              Afficher les tâches terminées
+            </label>
+          </div>
+
+          <div v-if = "showCompletedTasks">
+            <DynamicTable
+              title="Liste des taches terminées"
+              :columns="columnsTache"
+              :initialData="tachesTerminée"
+              ref="tableRef"
+              @update:rows="updateRows"
+              @delete-row="(index) => deleteTache(tache[index].IdTache)"
+              @save-row="(row) => handleRowSave(row)"
+            />
+          </div>
           <div class="action-buttons">
             <button
               @click="closeTache"
