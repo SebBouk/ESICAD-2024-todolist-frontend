@@ -186,7 +186,7 @@ defineExpose({
               <td
                 v-for="(column, colIndex) in columns"
                 :key="colIndex"
-                class="px-4 py-3"
+                class="px-2 py-3"
                 :class="{ 'cursor-pointer hover:text-blue-600': column.isClickable }"
                 @click="column.isClickable && handleCellClick(row, column)"
               >

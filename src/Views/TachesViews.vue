@@ -27,8 +27,7 @@ const loading = ref(false);
 const errorMessage = ref<string | null>(null);
 
 onMounted(async () => {
-  await fetchTaches(),
-  await fetchListes();
+  await fetchTaches(), await fetchListes();
   console.log('Taches après fetchTaches:', tache.value);
 });
 
@@ -172,7 +171,8 @@ const columns = ref<Column[]>([
     activeLabel: 'Terminé',
     inactiveLabel: 'En cours'
   },
-  { label: 'Liste',
+  {
+    label: 'Liste',
     key: 'IdListe',
     formatter: (row) => {
       const list = listes.value.find((cat) => cat.IdListe === row.IdListe);
@@ -181,8 +181,8 @@ const columns = ref<Column[]>([
     options: listes.value.map((cat) => ({
       value: cat.IdListe,
       label: cat.NomListe
-    })), 
-   }
+    }))
+  }
 ]);
 
 const updateColumnsWithListOptions = () => {
@@ -197,7 +197,7 @@ const updateColumnsWithListOptions = () => {
       key: 'EtatTache',
       isBoolean: true,
       activeLabel: 'Terminé',
-      inactiveLabel: 'En cours',
+      inactiveLabel: 'En cours'
     },
     {
       label: 'Liste',
@@ -208,13 +208,11 @@ const updateColumnsWithListOptions = () => {
       },
       options: listes.value.map((cat) => ({
         value: cat.IdListe,
-        label: cat.NomListe,
-      })),
-    },
+        label: cat.NomListe
+      }))
+    }
   ];
 };
-
-
 
 const tacheFields = computed((): FormField[] => [
   {
