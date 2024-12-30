@@ -280,7 +280,6 @@ function closeListe() {
   selectedCategorie.value = null;
 }
 
-
 const tachesEnCours = computed(() => {
   return tache.value.filter((t) => Number(t.EtatTache) === 0); // Filtre où EtatTache est "En cours" (false)
 });

@@ -34,6 +34,32 @@ const props = defineProps({
   initialData: { type: Array as () => Row[], default: () => [] }
 });
 
+// Fonction pour vérifier si une date est dépassée
+const isDateOverdue = (dateString: string): boolean => {
+  if (!dateString) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const taskDate = new Date(dateString);
+  taskDate.setHours(0, 0, 0, 0);
+  return taskDate < today;
+};
+
+// Fonction pour obtenir la classe CSS de la ligne en fonction de la date d'échéance
+const getRowClass = (row: Row): string => {
+  // Vérifie si c'est le tableau des tâches en vérifiant la présence d'une colonne spécifique
+  const isTacheTable = props.columns.some(col => col.key === 'EcheanceTache');
+  
+  if (!isTacheTable) return ''; // Si ce n'est pas le tableau des tâches, pas de coloration
+  
+  if (row.EtatTache) return ''; // Si la tâche est terminée, pas de coloration
+  
+  const dateColumn = props.columns.find(col => col.key === 'EcheanceTache');
+  if (dateColumn && row[dateColumn.key]) {
+    return isDateOverdue(row[dateColumn.key]) ? 'bg-red-100' : '';
+  }
+  return '';
+};
+
 const convertToLocalISODate = (dateString: string): string => {
   if (!dateString) return '';
   const localDate = new Date(dateString);
@@ -72,14 +98,12 @@ const formatDate = (dateString: string): string => {
 };
 
 const enableEditing = (index: number) => {
-  // Create a backup of the current row data
   const rowBackup = { ...rows.value[index] };
   rows.value[index].backup = rowBackup;
   rows.value[index].isEditing = true;
 };
 
 const cancelEditing = (index: number) => {
-  // Restore from backup if exists
   if (rows.value[index].backup) {
     const { ...originalData } = rows.value[index].backup;
     rows.value[index] = { ...originalData, isEditing: false };
@@ -93,6 +117,7 @@ const handleCellClick = (row: Row, column: Column) => {
     emit('cell-click', row, column);
   }
 };
+
 const saveRow = (index: number) => {
   const row = rows.value[index];
   row.isEditing = false;
@@ -156,9 +181,7 @@ defineExpose({
 <template>
   <div class="w-full">
     <div class="w-full">
-      <h1
-        class="text-2xl md:text-3xl text-center text-gray-800 font-bold mb-8 pb-2 border-b-3 border-blue-500"
-      >
+      <h1 class="text-2xl md:text-3xl text-center text-gray-800 font-bold mb-8 pb-2 border-b-3 border-blue-500">
         {{ title }}
       </h1>
 
@@ -173,7 +196,7 @@ defineExpose({
               >
                 {{ column.label }}
               </th>
-              <th v-if ="canShowActions(columns)" class="px-4 py-3 text-left text-sm font-semibold text-white">Actions</th>
+              <th v-if="canShowActions(columns)" class="px-4 py-3 text-left text-sm font-semibold text-white">Actions</th>
             </tr>
           </thead>
 
@@ -181,7 +204,7 @@ defineExpose({
             <tr
               v-for="(row, rowIndex) in rows"
               :key="rowIndex"
-              class="hover:bg-gray-50 transition-colors duration-200"
+              :class="['hover:bg-gray-50 transition-colors duration-200', getRowClass(row)]"
             >
               <td
                 v-for="(column, colIndex) in columns"
@@ -208,11 +231,7 @@ defineExpose({
                           : 'bg-red-500 hover:bg-red-600 text-white'
                       ]"
                     >
-                      {{
-                        row[column.key]
-                          ? column.activeLabel || 'Actif'
-                          : column.inactiveLabel || 'Inactif'
-                      }}
+                      {{ row[column.key] ? column.activeLabel || 'Actif' : column.inactiveLabel || 'Inactif' }}
                     </button>
                   </div>
                   <div v-else-if="column.options">
@@ -239,17 +258,12 @@ defineExpose({
                 </div>
                 <div v-else>
                   <span v-if="column.isBoolean">
-                    {{
-                      row[column.key]
-                        ? column.activeLabel || 'Actif'
-                        : column.inactiveLabel || 'Inactif'
-                    }}
+                    {{ row[column.key] ? column.activeLabel || 'Actif' : column.inactiveLabel || 'Inactif' }}
                   </span>
                   <span v-else-if="column.isDate">
                     {{ formatDate(row[column.key]) }}
                   </span>
                   <span v-else>
-                    <!-- Apply formatter if it exists -->
                     {{ column.formatter ? column.formatter(row) : row[column.key] }}
                   </span>
                 </div>
@@ -271,13 +285,15 @@ defineExpose({
                     </button>
                   </div>
                   <div v-else>
-                    <button v-if="columns.some(col => col.isEditable !== false)"
+                    <button
+                      v-if="columns.some(col => col.isEditable !== false)"
                       @click="enableEditing(rowIndex)"
                       class="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-200 mr-2"
                     >
                       Modifier
                     </button>
-                    <button v-if="columns.some(col => col.isDelete !== false)"
+                    <button
+                      v-if="columns.some(col => col.isDelete !== false)"
                       @click="deleteRow(rowIndex)"
                       class="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200"
                     >
