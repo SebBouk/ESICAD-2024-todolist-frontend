@@ -184,6 +184,39 @@ const addTaches = async (formData: any) => {
   }
 };
 
+const addListe = async (formData: any) => {
+  try {
+    
+    if (!selectedCategorie.value) {
+      toast.error('Aucune catégorie sélectionnée');
+      return;
+    }
+      console.log('Données du formulaire :', formData);
+    const response = await fetch(`/api/user/utilisateur/listes/add/${selectedCategorie.value.IdCategorie}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Erreur côté serveur :', errorData);
+      throw new Error(errorData.error || "Erreur lors de l'ajout de la liste");
+    }
+
+    const addedListe = await response.json();
+    liste.value.push(addedListe);
+    toast.success('Liste ajouté avec succès');
+    closeModalListe();
+    fetchListes(selectedCategorie.value.IdCategorie);
+  } catch (error) {
+    console.error('Erreur :', error);
+    errorMessage.value = error instanceof Error ? error.message : "Impossible d'ajouter la liste.";
+  }
+};
+
 const handleRowSave = async (row: any) => {
   loading.value = true;
   errorMessage.value = null;
@@ -247,7 +280,17 @@ const tacheFields = computed((): FormField[] => [
   }
 ]);
 
+const listeFields = computed((): FormField[] => [
+  {
+    type: 'text',
+    name: 'NomListe',
+    label: 'Nom',
+    required: true
+  }
+]);
+
 const isModalOpen = ref(false);
+const isModalOpenListe = ref(false);
 
 function openModal() {
   if (!selectedCategorie.value) {
@@ -257,8 +300,20 @@ function openModal() {
   isModalOpen.value = true;
 }
 
+function openModalListe() {
+  if (!selectedCategorie.value) {
+    toast.error("Veuillez sélectionner une catégorie avant d'ajouter une liste");
+    return;
+  }
+  isModalOpenListe.value = true;
+}
+
 function closeModal() {
   isModalOpen.value = false;
+}
+
+function closeModalListe() {
+  isModalOpenListe.value = false;
 }
 
 onMounted(async () => {
@@ -334,12 +389,12 @@ const showCompletedTasks = ref(false);
           </div>
           <div class="action-buttons">
             <button
-              v-if="!isModalOpen"
-              @click="openModal"
+              v-if="!isModalOpenListe"
+              @click="openModalListe"
               class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 w-full md:w-auto"
               :disabled="!selectedCategorie"
             >
-              Ajouter une Tache
+              Ajouter une Liste
             </button>
           </div>
         </div>
@@ -405,6 +460,17 @@ const showCompletedTasks = ref(false);
             submit-label="Enregistrer la tache"
             @submit="addTaches"
             @cancel="closeModal"
+          />
+        </div>
+      </div>
+      <div v-if="isModalOpenListe" class="modal-overlay">
+        <div class="modal-content">
+          <h1>Ajouter une nouvelle liste</h1>
+          <DynamicForm
+            :fields="listeFields"
+            submit-label="Enregistrer la liste"
+            @submit="formData => addListe(formData)"
+            @cancel="closeModalListe"
           />
         </div>
       </div>
