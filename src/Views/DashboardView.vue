@@ -12,6 +12,7 @@ import DynamicForm, { FormField } from '@/components/DynamicForm.vue';
 const toast = useToast();
 const categorie = ref<Categories[]>([]);
 const liste = ref<Listes[]>([]);
+const listePersonnelle = ref<Listes[]>([]);
 const loading = ref(false);
 const errorMessage = ref<string | null>(null);
 const route = useRoute();
@@ -64,6 +65,27 @@ const fetchCategorie = async () => {
   } catch (error) {
     console.error('Erreur :', error);
     errorMessage.value = 'Impossible de charger les categories.';
+  } finally {
+    loading.value = false;
+  }
+};
+
+const fetchListePersonnelle = async () => {
+  loading.value = true;
+  errorMessage.value = null;
+  const IdUser = route.params.IdUser;
+  try {
+    const response = await fetch(`/api/user/utilisateur/getListePerso/${IdUser}`);
+    console.log('Response status:', response.status);
+    if (!response.ok) {
+      console.error('Fetch failed:', await response.text());
+      throw new Error('Erreur lors de la récupération des données');
+    }
+    listePersonnelle.value = await response.json();
+    console.log('Liste personnelle récupérées:', listePersonnelle.value);
+  } catch (error) {
+    console.error('Erreur :', error);
+    errorMessage.value = 'Impossible de charger les listes personnelle.';
   } finally {
     loading.value = false;
   }
@@ -217,6 +239,35 @@ const addListe = async (formData: any) => {
   }
 };
 
+const addListePerso = async (formData: any) => {
+  try {
+    const IdUser = route.params.IdUser;
+    const response = await fetch(`/api/user/utilisateur/listesPerso/add/${IdUser}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formData)
+    });
+  
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Erreur côté serveur :', errorData);
+      throw new Error(errorData.error || "Erreur lors de l'ajout de la liste");
+    }
+
+    const addedListePerso = await response.json();
+    listePersonnelle.value.push(addedListePerso);
+    toast.success('Liste ajouté avec succès');
+    closeModalPerso();
+    fetchListePersonnelle();
+  } catch (error) {
+    console.error('Erreur :', error);
+    errorMessage.value = error instanceof Error ? error.message : "Impossible d'ajouter la liste.";
+  }
+};
+
 const handleRowSave = async (row: any) => {
   loading.value = true;
   errorMessage.value = null;
@@ -269,14 +320,22 @@ const tacheFields = computed((): FormField[] => [
     name: 'IdListe',
     label: 'Liste',
     required: true,
-    options: selectedCategorie.value
-      ? liste.value
-          .filter((list) => list.IdCategorie === selectedCategorie.value?.IdCategorie)
-          .map((list) => ({
-            value: list.IdListe,
-            label: list.NomListe
-          }))
-      : []
+    options: [
+      // Options pour les listes de la catégorie sélectionnée
+      ...(selectedCategorie.value
+        ? liste.value
+            .filter((list) => list.IdCategorie === selectedCategorie.value?.IdCategorie)
+            .map((list) => ({
+              value: list.IdListe,
+              label: list.NomListe + ' (Catégorie)'
+            }))
+        : []),
+      // Options pour les listes personnelles
+      ...listePersonnelle.value.map((list) => ({
+        value: list.IdListe,
+        label: list.NomListe + ' (Personnel)'
+      }))
+    ]
   }
 ]);
 
@@ -291,13 +350,14 @@ const listeFields = computed((): FormField[] => [
 
 const isModalOpen = ref(false);
 const isModalOpenListe = ref(false);
+const isModalOpenPerso = ref(false);
 
 function openModal() {
-  if (!selectedCategorie.value) {
-    toast.error("Veuillez sélectionner une catégorie avant d'ajouter une tâche");
-    return;
-  }
   isModalOpen.value = true;
+}
+
+function openModalPerso() {
+  isModalOpenPerso.value = true;
 }
 
 function openModalListe() {
@@ -305,19 +365,33 @@ function openModalListe() {
     toast.error("Veuillez sélectionner une catégorie avant d'ajouter une liste");
     return;
   }
-  isModalOpenListe.value = true;
+  isModalOpen.value = true;
 }
 
 function closeModal() {
   isModalOpen.value = false;
 }
 
+function closeModalPerso() {
+  isModalOpenPerso.value = false;
+}
+
 function closeModalListe() {
   isModalOpenListe.value = false;
 }
 
+const listePersoFields = computed((): FormField[] => [
+  {
+    type: 'text',
+    name: 'NomListe',
+    label: 'Nom',
+    required: true
+  }
+]);
+
 onMounted(async () => {
   await fetchCategorie();
+  await fetchListePersonnelle();
 
   console.log(
     'Categories après fetchCategorie:',
@@ -348,210 +422,234 @@ const showCompletedTasks = ref(false);
 </script>
 
 <template>
-  <div class="user-management-container">
-    <div class="user-management-content">
-      <button
-        @click="logout"
-        class="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 w-full md:w-auto"
-      >
-        Déconnexion
-      </button>
-      <h1>Dashboard</h1>
-      <p>Bienvenue sur le dashboard de l'application.</p>
-      <div class="dynamic-table-wrapper" v-if="!loading && !errorMessage && categorie.length > 0">
-        <DynamicTable
-          title="Liste des categories"
-          :columns="columns"
-          :initialData="categorie"
-          ref="tableRef"
-          @cell-click="handleCellClick"
-        />
+  <div class="dashboard-container">
+    <div class="top-bar">
+    <div class="top-bar-content">
+      <div class="logout-section">
+        <button
+          @click="logout"
+          class="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 w-full md:w-auto"
+        >
+          Déconnexion
+        </button>
       </div>
+      <div class="title-section">
+        <h1>Dashboard</h1>
+        <p>Bienvenue sur le dashboard de l'application.</p>
+      </div>
+      <div class="spacer"></div> <!-- Pour maintenir la symétrie avec le bouton de déconnexion -->
     </div>
+  </div>
 
-    <div>
-      <div class="modal-overlay" v-if="!loading && !errorMessage && selectedCategorie">
-        <div class="modal-content">
+    <div class="lists-container">
+      <!-- Section Catégories -->
+      <div class="list-section">
+        <div class="list-content" v-if="!loading && !errorMessage && categorie.length > 0">
           <DynamicTable
-            title="Liste des listes"
+            title="Liste des categories"
+            :columns="columns"
+            :initialData="categorie"
+            ref="tableRef"
+            @cell-click="handleCellClick"
+          />
+        </div>
+      </div>
+
+      <!-- Section Listes Personnelles -->
+      <div class="list-section">
+        <div class="list-content" v-if="!loading && !errorMessage">
+          <DynamicTable
+            title="Listes personnelles"
             :columns="columnsListe"
-            :initialData="liste"
+            :initialData="listePersonnelle"
             ref="tableRef"
             @cell-click="handleCellClickListe"
           />
           <div class="action-buttons">
-            <button
-              @click="closeListe"
-              class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 w-full md:w-auto"
-            >
-              Retour
-            </button>
-          </div>
-          <div class="action-buttons">
-            <button
-              v-if="!isModalOpenListe"
-              @click="openModalListe"
-              class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 w-full md:w-auto"
-              :disabled="!selectedCategorie"
-            >
-              Ajouter une Liste
+            <button v-if="!isModalOpenPerso" @click="openModalPerso" class="BT">
+              Ajouter une liste
             </button>
           </div>
         </div>
       </div>
-      <div v-if="loading" class="loading-message">Chargement...</div>
-      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-      <div v-if="!loading && !errorMessage && categorie.length === 0">Aucune catégorie trouvée</div>
+    </div>
 
-      <div class="modal-overlay" v-if="!loading && !errorMessage && selectedListe">
-        <div class="modal-content">
+    <!-- Affichage des listes de la catégorie sélectionnée -->
+    <div v-if="!loading && !errorMessage && selectedCategorie" class="modal-like-container">
+      <div class="modal-like-content">
+        <DynamicTable
+          title="Liste des listes"
+          :columns="columnsListe"
+          :initialData="liste"
+          ref="tableRef"
+          @cell-click="handleCellClickListe"
+        />
+        <div class="action-buttons">
+          <button @click="closeListe" class="BT">Retour</button>
+          <button 
+            v-if="!isModalOpenListe" 
+            @click="openModalListe" 
+            class="BT" 
+            :disabled="!selectedCategorie"
+          >
+            Ajouter une Liste
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Affichage des tâches -->
+    <div v-if="!loading && !errorMessage && selectedListe" class="modal-like-container">
+      <div class="modal-like-content">
+        <DynamicTable
+          title="Liste des taches en cours"
+          :columns="columnsTache"
+          :initialData="tachesEnCours"
+          ref="tableRef"
+          @update:rows="updateRows"
+          @delete-row="(index) => deleteTache(tache[index].IdTache)"
+          @save-row="(row) => handleRowSave(row)"
+        />
+        
+        <div class="checkbox-container">
+          <label>
+            <input type="checkbox" v-model="showCompletedTasks"/>
+            Afficher les tâches terminées
+          </label>
+        </div>
+
+        <div v-if="showCompletedTasks">
           <DynamicTable
-            title="Liste des taches en cours"
+            title="Liste des taches terminées"
             :columns="columnsTache"
-            :initialData="tachesEnCours"
+            :initialData="tachesTerminée"
             ref="tableRef"
             @update:rows="updateRows"
             @delete-row="(index) => deleteTache(tache[index].IdTache)"
             @save-row="(row) => handleRowSave(row)"
           />
-          <div>
-            <label>
-              <input type="checkbox" v-model="showCompletedTasks"/>
-              Afficher les tâches terminées
-            </label>
-          </div>
+        </div>
+        
+        <div class="action-buttons">
+          <button @click="closeTache" class="BT">Retour</button>
+          <button v-if="!isModalOpen" @click="openModal" class="BT">
+            Ajouter une Tache
+          </button>
+        </div>
+      </div>
+    </div>
 
-          <div v-if = "showCompletedTasks">
-            <DynamicTable
-              title="Liste des taches terminées"
-              :columns="columnsTache"
-              :initialData="tachesTerminée"
-              ref="tableRef"
-              @update:rows="updateRows"
-              @delete-row="(index) => deleteTache(tache[index].IdTache)"
-              @save-row="(row) => handleRowSave(row)"
-            />
-          </div>
-          <div class="action-buttons">
-            <button
-              @click="closeTache"
-              class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 w-full md:w-auto"
-            >
-              Retour
-            </button>
-          </div>
-          <div class="action-buttons">
-            <button
-              v-if="!isModalOpen"
-              @click="openModal"
-              class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 w-full md:w-auto"
-              :disabled="!selectedCategorie"
-            >
-              Ajouter une Tache
-            </button>
-          </div>
-        </div>
+    <!-- Les modals restent exactement les mêmes -->
+    <div v-if="isModalOpen" class="modal-overlay">
+      <div class="modal-content">
+        <h2>Ajouter une nouvelle tache</h2>
+        <DynamicForm
+          :fields="tacheFields"
+          submit-label="Enregistrer la tache"
+          @submit="addTaches"
+          @cancel="closeModal"
+        />
       </div>
-      <div v-if="isModalOpen" class="modal-overlay">
-        <div class="modal-content">
-          <h1>Ajouter une nouvelle tache</h1>
-          <DynamicForm
-            :fields="tacheFields"
-            submit-label="Enregistrer la tache"
-            @submit="addTaches"
-            @cancel="closeModal"
-          />
-        </div>
+    </div>
+
+    <div v-if="isModalOpenListe" class="modal-overlay">
+      <div class="modal-content">
+        <h1>Ajouter une nouvelle liste</h1>
+        <DynamicForm
+          :fields="listeFields"
+          submit-label="Enregistrer la liste"
+          @submit="formData => addListe(formData)"
+          @cancel="closeModalListe"
+        />
       </div>
-      <div v-if="isModalOpenListe" class="modal-overlay">
-        <div class="modal-content">
-          <h1>Ajouter une nouvelle liste</h1>
-          <DynamicForm
-            :fields="listeFields"
-            submit-label="Enregistrer la liste"
-            @submit="formData => addListe(formData)"
-            @cancel="closeModalListe"
-          />
-        </div>
+    </div>
+
+    <div v-if="isModalOpenPerso" class="modal-overlay">
+      <div class="modal-content">
+        <h1>Ajouter une nouvelle liste personnelle</h1>
+        <DynamicForm
+          :fields="listePersoFields"
+          submit-label="Enregistrer la liste"
+          @submit="formData => addListePerso(formData)"
+          @cancel="closeModalPerso"
+        />
       </div>
     </div>
   </div>
 </template>
+
 <style scoped>
-.user-management-container {
+.dashboard-container {
   font-family: 'Arial', sans-serif;
   background-color: #f4f6f9;
-  display: flex;
-  justify-content: center;
-  padding: 2rem;
-  line-height: 1.6;
-  color: #333;
+  padding: 1rem;
+  min-height: 100vh;
 }
 
-.user-management-content {
+.top-bar {
   background-color: white;
-  width: 100%;
-  max-width: auto;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Heading Styles */
-h1 {
-  text-align: center;
-  color: #2c3e50;
-  margin-bottom: 2rem;
-  font-size: 2.5rem;
-  border-bottom: 3px solid #3498db;
-  padding-bottom: 0.5rem;
-}
-
-/* Dynamic Table Wrapper */
-.dynamic-table-wrapper {
+.lists-container {
   display: flex;
-  justify-content: center;
-  margin-bottom: 1.5rem;
-  overflow-x: hidden; /* Empêche la barre de défilement horizontale */
-  width: 100%;
-}
-table {
-  width: 100%; /* Le tableau s'étend sur toute la largeur */
-  table-layout: fixed; /* Empêche les colonnes de se redimensionner automatiquement */
-}
-
-thead th,
-tbody td {
-  word-wrap: break-word; /* Assure que les longs mots ou valeurs se cassent si nécessaire */
-  text-align: left;
-  padding: 12px;
-  border-bottom: 1px solid #e2e6ea;
-}
-
-/* Action Buttons */
-.action-buttons {
-  display: flex;
-  justify-content: center;
   gap: 1rem;
-  margin-top: 1rem;
   margin-bottom: 1rem;
 }
 
+.list-section {
+  flex: 1;
+  min-width: 300px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.list-content {
+  padding: 1rem;
+}
+
+.modal-like-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 800px;
+  z-index: 900;
+}
+
+.modal-like-content {
+  background: rgb(255, 255, 255);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  justify-content: center;
+}
+
 .BT {
-  display: inline-block;
   background-color: #3498db;
   color: white;
-  padding: 10px 20px;
+  padding: 0.5rem 1rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 600;
+  transition: all 0.2s;
 }
 
 .BT:hover {
   background-color: #2980b9;
-  transform: translateY(-2px);
 }
 
 .BT:disabled {
@@ -559,22 +657,11 @@ tbody td {
   cursor: not-allowed;
 }
 
-/* Loading and Error Messages */
-.loading-message {
-  color: #3498db;
-  font-size: 1.2em;
-  text-align: center;
-  margin-bottom: 1em;
+.checkbox-container {
+  margin: 1rem 0;
 }
 
-.error-message {
-  color: #e74c3c;
-  font-size: 1.2em;
-  text-align: center;
-  margin-bottom: 1em;
-}
-
-/* Modal Styles */
+/* Les styles pour les modals restent les mêmes */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -591,89 +678,86 @@ tbody td {
 .modal-content {
   background: white;
   padding: 2rem;
-  border-radius: 12px;
-  width: 100%;
+  border-radius: 8px;
+  width: 90%;
   max-width: 500px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.modal-content form {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.form-group input {
-  padding: 10px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-}
-
-.checkbox-group {
-  flex-direction: row;
-  gap: 1rem;
-  align-items: center;
-}
-
-.checkbox-group label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.modal-actions button {
-  flex-grow: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.modal-actions button[type='submit'] {
-  background-color: #2ecc71;
-  color: white;
-}
-
-.modal-actions .cancel-button {
-  background-color: #e74c3c;
-  color: white;
-}
-
-/* Responsive Adjustments */
-@media screen and (max-width: 600px) {
-  .user-management-container {
-    padding: 1rem;
-  }
-
-  .user-management-content {
-    padding: 1rem;
-  }
-
-  .action-buttons {
+@media screen and (max-width: 768px) {
+  .lists-container {
     flex-direction: column;
   }
 
-  .BT {
+  .list-section {
     width: 100%;
   }
+}
+.top-bar {
+  background-color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
 
-  .modal-content {
-    width: 90%;
-    max-width: none;
-    margin: 0 5%;
+.top-bar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.logout-section {
+  flex: 1;
+}
+
+.title-section {
+  flex: 2;
+  text-align: center;
+}
+
+.spacer {
+  flex: 1;
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #2c3e50;
+  margin: 0;
+  padding: 0.5rem 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+p {
+  color: #666;
+  margin: 0;
+  font-size: 1rem;
+}
+
+@media screen and (max-width: 768px) {
+  .top-bar-content {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .logout-section {
+    width: 100%;
+    order: 2;
+  }
+  
+  .title-section {
+    order: 1;
+  }
+  
+  .spacer {
+    display: none;
+  }
+  
+  h1 {
+    font-size: 2rem;
   }
 }
 </style>
