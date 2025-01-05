@@ -104,6 +104,7 @@ const fetchUsers = async () => {
     loading.value = false;
   }
 };
+
 const updateUsersOptions = () => {
   const UsersColumn = columns.value.find((column) => column.key === 'IdUser');
   if (UsersColumn) {

@@ -6,31 +6,40 @@ import DynamicTable from '../components/DynamicTable.vue';
 import { useToast } from 'vue-toastification';
 import NavComponent from '@/components/NavComponent.vue';
 import { Categories } from '@/models/Categories';
+import { Column } from '@/models/Column';
+
+interface ListeStats {
+  totalTaches: number;
+  tachesTerminees: number;
+}
+
+interface TachesRetard {
+  tachesRetard: number;
+}
 
 const toast = useToast();
 
-interface Column {
-  label: string;
-  key: string;
-  isBoolean?: boolean;
-  isDate?: boolean;
-  options?: { value: string | number; label: string }[];
-  activeLabel?: string;
-  inactiveLabel?: string;
-  formatter?: (row: any) => string;
-}
 const tableRef = ref<InstanceType<typeof DynamicTable> | null>(null);
 const liste = ref<Listes[]>([]);
 const categories = ref<Categories[]>([]);
 const loading = ref(false);
 const errorMessage = ref<string | null>(null);
+  const listeStats = ref(new Map<number, ListeStats>());
+    const tachesRetard = ref(new Map<number, TachesRetard>());
 
-
-
-onMounted(async () => {
-  await Promise.all([fetchListes(), fetchCategories()]);
-  console.log('Listes après fetchListes:', liste.value);
-  updateCategoryOptions();
+    onMounted(async () => {
+  try {
+    await fetchCategories();
+    await fetchListes();
+    
+    // Charger les statistiques pour chaque liste
+    for (const item of liste.value) {
+      await fetchListeStats(item.IdListe);
+      await fetchListesRetard(item.IdListe);
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement initial:', error);
+  }
 });
 
 const fetchListes = async () => {
@@ -46,10 +55,13 @@ const fetchListes = async () => {
     const data = await response.json();
     liste.value = data.map((item: any) => ({
       ...item,
-      NomCategorie: categories.value.find(
-        (cat) => cat.IdCategorie === item.IdCategorie
-      )?.NomCategorie || '',
+      NomCategorie:
+        categories.value.find((cat) => cat.IdCategorie === item.IdCategorie)?.NomCategorie || ''
     }));
+    await Promise.all([
+    ...liste.value.map(liste => fetchListeStats(liste.IdListe)),
+    ...liste.value.map(liste => fetchListesRetard(liste.IdListe))
+    ]);
     console.log('Listes récupérées:', liste.value);
   } catch (error) {
     console.error('Erreur :', error);
@@ -142,6 +154,45 @@ const handleRowSave = async (row: any, originalRow: any) => {
   }
 };
 
+const fetchListeStats = async (IdListe: number) => {
+  try {
+    const response = await fetch(`/api/admin/listes/getListeStats/${IdListe}`);
+    if (!response.ok) {
+      throw new Error('Erreur lors de la récupération des statistiques');
+    }
+    const stats = await response.json();
+    listeStats.value.set(IdListe, stats);
+  } catch (error) {
+    console.error('Erreur:', error);
+  }
+};
+
+const fetchListesRetard = async (IdListe: any) => {
+  try {
+    const response = await fetch(`/api/admin/listes/getListeRetards/${IdListe}`);
+    if (!response.ok) {
+      throw new Error('Erreur lors de la récupération des listes en Retards');
+    }
+    const retards = await response.json();
+    tachesRetard.value.set(IdListe, retards);
+
+    console.log('Retards:', tachesRetard.value);
+  } catch (error) {
+    console.error('Erreur:', error);
+  }
+};
+
+
+const listeWithStats = computed(() => {
+  return liste.value.map(liste => ({
+    ...liste,
+    totalTaches: listeStats.value.get(liste.IdListe)?.totalTaches || 0,
+    tachesTerminees: listeStats.value.get(liste.IdListe)?.tachesTerminees || 0,
+    tachesRetard: tachesRetard.value.get(liste.IdListe)?.tachesRetard || 0
+  }));
+});
+
+
 const fetchCategories = async () => {
   try {
     const response = await fetch('/api/admin/categories/get');
@@ -158,9 +209,9 @@ const fetchCategories = async () => {
 };
 
 const updateCategoryOptions = () => {
-  const categoryColumn = columns.value.find(column => column.key === 'IdCategorie');
+  const categoryColumn = columns.value.find((column) => column.key === 'IdCategorie');
   if (categoryColumn) {
-    categoryColumn.options = categories.value.map(cat => ({
+    categoryColumn.options = categories.value.map((cat) => ({
       value: cat.IdCategorie,
       label: cat.NomCategorie
     }));
@@ -205,8 +256,11 @@ const columns = ref<Column[]>([
     options: categories.value.map((cat) => ({
       value: cat.IdCategorie,
       label: cat.NomCategorie
-    })), 
-  }
+    }))
+  },
+  { label: 'Tâches terminées', key: 'tachesTerminees'},
+  { label: 'Tâches totales', key: 'totalTaches'},
+  { label: 'Tâches en retard', key: 'tachesRetard'}
 ]);
 
 const listeFields = computed((): FormField[] => [
@@ -249,7 +303,7 @@ const listeFields = computed((): FormField[] => [
         <DynamicTable
           title="Liste des listes"
           :columns="columns"
-          :initialData="liste"
+          :initialData="listeWithStats"
           ref="tableRef"
           @update:rows="updateRows"
           @delete-row="(index) => deleteListe(liste[index].IdListe)"

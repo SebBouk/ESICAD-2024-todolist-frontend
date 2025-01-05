@@ -21,13 +21,16 @@ const selectedCategorie = ref<Categories | null>(null);
 const selectedListe = ref<Listes | null>(null);
 const tache = ref<Taches[]>([]);
 const router = useRouter();
+const listeStats = ref(new Map());
 
 const columns = ref<Column[]>([
   { label: 'Nom', key: 'NomCategorie', isClickable: true, isEditable: false, isDelete: false }
 ]);
 
 const columnsListe = ref<Column[]>([
-  { label: 'Nom', key: 'NomListe', isClickable: true, isEditable: false, isDelete: false }
+  { label: 'Nom', key: 'NomListe', isClickable: true, isEditable: false, isDelete: false },
+  { label: 'Tâches terminées', key: 'tachesTerminees', isClickable: false, isEditable: false, isDelete: false },
+  { label: 'Tâches totales', key: 'totalTaches', isClickable: false, isEditable: false, isDelete: false }  
 ]);
 
 const columnsTache = ref<Column[]>([
@@ -70,22 +73,26 @@ const fetchCategorie = async () => {
   }
 };
 
+// Modifier la fonction fetchListePersonnelle pour inclure les stats
 const fetchListePersonnelle = async () => {
   loading.value = true;
   errorMessage.value = null;
   const IdUser = route.params.IdUser;
   try {
     const response = await fetch(`/api/user/utilisateur/getListePerso/${IdUser}`);
-    console.log('Response status:', response.status);
     if (!response.ok) {
-      console.error('Fetch failed:', await response.text());
       throw new Error('Erreur lors de la récupération des données');
     }
     listePersonnelle.value = await response.json();
-    console.log('Liste personnelle récupérées:', listePersonnelle.value);
+    
+    // Récupérer les stats pour chaque liste
+    await Promise.all(
+      listePersonnelle.value.map(liste => fetchListeStats(liste.IdListe))
+    );
+    
   } catch (error) {
     console.error('Erreur :', error);
-    errorMessage.value = 'Impossible de charger les listes personnelle.';
+    errorMessage.value = 'Impossible de charger les listes personnelles.';
   } finally {
     loading.value = false;
   }
@@ -123,6 +130,9 @@ const fetchListes = async (IdCategorie: number) => {
       NomCategorie:
         categorie.value.find((cat) => cat.IdCategorie === item.IdCategorie)?.NomCategorie || ''
     }));
+    await Promise.all(
+      liste.value.map(liste => fetchListeStats(liste.IdListe))
+    );
     console.log('Listes récupérées:', liste.value);
   } catch (error) {
     console.error('Erreur :', error);
@@ -302,6 +312,36 @@ const updateRows = (newRows: any[]) => {
   tache.value = [...newRows];
 };
 
+const fetchListeStats = async (IdListe: any) => {
+  try {
+    const response = await fetch(`/api/user/utilisateur/getListeStats/${IdListe}`);
+    if (!response.ok) {
+      throw new Error('Erreur lors de la récupération des statistiques');
+    }
+    const stats = await response.json();
+    listeStats.value.set(IdListe, stats);
+  } catch (error) {
+    console.error('Erreur:', error);
+  }
+};
+
+// Computed property pour combiner les listes avec leurs stats
+const listePersonnelleWithStats = computed(() => {
+  return listePersonnelle.value.map(liste => ({
+    ...liste,
+    totalTaches: listeStats.value.get(liste.IdListe)?.totalTaches || 0,
+    tachesTerminees: listeStats.value.get(liste.IdListe)?.tachesTerminees || 0
+  }));
+});
+
+const listeWithStats = computed(() => {
+  return liste.value.map(liste => ({
+    ...liste,
+    totalTaches: listeStats.value.get(liste.IdListe)?.totalTaches || 0,
+    tachesTerminees: listeStats.value.get(liste.IdListe)?.tachesTerminees || 0
+  }));
+});
+
 const tacheFields = computed((): FormField[] => [
   {
     type: 'text',
@@ -461,13 +501,13 @@ const showCompletedTasks = ref(false);
           <DynamicTable
             title="Listes personnelles"
             :columns="columnsListe"
-            :initialData="listePersonnelle"
+            :initialData="listePersonnelleWithStats"
             ref="tableRef"
             @cell-click="handleCellClickListe"
           />
           <div class="action-buttons">
             <button v-if="!isModalOpenPerso" @click="openModalPerso" class="BT">
-              Ajouter une liste
+              Ajouter une liste personnelle
             </button>
           </div>
         </div>
@@ -480,7 +520,7 @@ const showCompletedTasks = ref(false);
         <DynamicTable
           title="Liste des listes"
           :columns="columnsListe"
-          :initialData="liste"
+          :initialData="listeWithStats"
           ref="tableRef"
           @cell-click="handleCellClickListe"
         />
@@ -566,7 +606,7 @@ const showCompletedTasks = ref(false);
 
     <div v-if="isModalOpenPerso" class="modal-overlay">
       <div class="modal-content">
-        <h1>Ajouter une nouvelle liste personnelle</h1>
+        <h2>Ajouter une nouvelle liste personnelle</h2>
         <DynamicForm
           :fields="listePersoFields"
           submit-label="Enregistrer la liste"
