@@ -156,7 +156,7 @@ const updatePassword = async () => {
       class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
     >
       <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-        <h2 class="text-xl font-semibold mb-4">Modifier le mot de passe</h2>
+        <h2 class="text-xl font-semibold mb-4 text-center">Modifier le mot de passe de : <br> {{ AdresseMailUser }}</h2>
         <div class="mb-4">
           <label for="admin-password" class="block text-sm font-medium text-gray-700"
             >Mot de passe administrateur</label
